@@ -1,6 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { toast } from 'react-toastify';
-import api from '../api/apiClient';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { toast } from "react-toastify";
+import api from "../api/apiClient";
 
 // Інтерфейси для типізації
 export interface User {
@@ -61,7 +67,9 @@ export const useAuth = () => useContext(AuthContext);
 // Провайдер контексту
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token"),
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,17 +80,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         try {
           setIsLoading(true);
           // Додаємо токен до заголовків всіх запитів
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
+          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
           // Запитуємо дані про користувача
-          const response = await api.get('/auth/me');
+          const response = await api.get("/auth/me");
           setUser(response.data.data.user);
         } catch (err) {
-          console.error('Token verification failed:', err);
+          console.error("Token verification failed:", err);
           // Видаляємо невалідний токен
-          localStorage.removeItem('token');
+          localStorage.removeItem("token");
           setToken(null);
-          delete api.defaults.headers.common['Authorization'];
+          delete api.defaults.headers.common["Authorization"];
         } finally {
           setIsLoading(false);
         }
@@ -99,24 +107,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await api.post('/auth/login', { email, password });
+
+      const response = await api.post("/auth/login", { email, password });
       const { token: newToken, user: userData } = response.data.data;
-      
+
       // Зберігаємо токен
-      localStorage.setItem('token', newToken);
+      localStorage.setItem("token", newToken);
       setToken(newToken);
-      
+
       // Встановлюємо токен для всіх наступних запитів
-      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+      api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+
       // Зберігаємо інформацію про користувача
       setUser(userData);
-      
-      toast.success('Вхід виконано успішно!');
+
+      toast.success("Вхід виконано успішно!");
     } catch (err: any) {
-      console.error('Login failed:', err);
-      const errorMessage = err.response?.data?.message || 'Помилка входу. Перевірте логін та пароль.';
+      console.error("Login failed:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Помилка входу. Перевірте логін та пароль.";
       setError(errorMessage);
       toast.error(errorMessage);
       throw err;
@@ -130,24 +140,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await api.post('/auth/register', formData);
+
+      const response = await api.post("/auth/register", formData);
       const { token: newToken, user: userData } = response.data.data;
-      
+
       // Зберігаємо токен
-      localStorage.setItem('token', newToken);
+      localStorage.setItem("token", newToken);
       setToken(newToken);
-      
+
       // Встановлюємо токен для всіх наступних запитів
-      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+      api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+
       // Зберігаємо інформацію про користувача
       setUser(userData);
-      
-      toast.success('Реєстрація успішна! На вашу пошту надіслано лист для підтвердження.');
+
+      toast.success(
+        "Реєстрація успішна! На вашу пошту надіслано лист для підтвердження.",
+      );
     } catch (err: any) {
-      console.error('Registration failed:', err);
-      const errorMessage = err.response?.data?.message || 'Помилка реєстрації. Спробуйте ще раз.';
+      console.error("Registration failed:", err);
+      const errorMessage =
+        err.response?.data?.message || "Помилка реєстрації. Спробуйте ще раз.";
       setError(errorMessage);
       toast.error(errorMessage);
       throw err;
@@ -159,16 +172,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Функція для виходу користувача
   const logout = () => {
     // Видаляємо токен
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setToken(null);
-    
+
     // Видаляємо заголовок авторизації
-    delete api.defaults.headers.common['Authorization'];
-    
+    delete api.defaults.headers.common["Authorization"];
+
     // Скидаємо інформацію про користувача
     setUser(null);
-    
-    toast.info('Ви вийшли з системи');
+
+    toast.info("Ви вийшли з системи");
   };
 
   // Функція для оновлення профілю користувача
@@ -176,17 +189,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await api.put('/auth/me', formData);
+
+      const response = await api.put("/auth/me", formData);
       const { user: updatedUser } = response.data.data;
-      
+
       // Оновлюємо інформацію про користувача
       setUser(updatedUser);
-      
-      toast.success('Профіль успішно оновлено!');
+
+      toast.success("Профіль успішно оновлено!");
     } catch (err: any) {
-      console.error('Profile update failed:', err);
-      const errorMessage = err.response?.data?.message || 'Помилка оновлення профілю.';
+      console.error("Profile update failed:", err);
+      const errorMessage =
+        err.response?.data?.message || "Помилка оновлення профілю.";
       setError(errorMessage);
       toast.error(errorMessage);
       throw err;
@@ -209,9 +223,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 

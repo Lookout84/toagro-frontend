@@ -3,26 +3,26 @@
 Пропоную створити React додаток за допомогою Vite з такою структурою:
 toagro-frontend/
 ├── public/
-│   ├── favicon.ico
-│   └── assets/
-│       └── images/
+│ ├── favicon.ico
+│ └── assets/
+│ └── images/
 ├── src/
-│   ├── api/           # API клієнт для взаємодії з бекендом
-│   ├── components/    # Багаторазові компоненти
-│   │   ├── common/    # Загальні компоненти (Button, Input, Modal тощо)
-│   │   ├── layout/    # Компоненти розмітки (Header, Footer, Sidebar)
-│   │   └── ui/        # UI компоненти високого рівня (ListingCard, CategoryBox тощо)
-│   ├── hooks/         # Кастомні React хуки
-│   ├── context/       # Контексти React (AuthContext, CartContext тощо)
-│   ├── pages/         # Компоненти сторінок
-│   ├── routes/        # Налаштування маршрутизації
-│   ├── store/         # Стан додатку (Redux/Redux Toolkit)
-│   ├── styles/        # Глобальні стилі
-│   ├── types/         # TypeScript типи та інтерфейси
-│   ├── utils/         # Допоміжні функції
-│   ├── App.tsx        # Головний компонент
-│   ├── main.tsx       # Вхідна точка
-│   └── vite-env.d.ts
+│ ├── api/ # API клієнт для взаємодії з бекендом
+│ ├── components/ # Багаторазові компоненти
+│ │ ├── common/ # Загальні компоненти (Button, Input, Modal тощо)
+│ │ ├── layout/ # Компоненти розмітки (Header, Footer, Sidebar)
+│ │ └── ui/ # UI компоненти високого рівня (ListingCard, CategoryBox тощо)
+│ ├── hooks/ # Кастомні React хуки
+│ ├── context/ # Контексти React (AuthContext, CartContext тощо)
+│ ├── pages/ # Компоненти сторінок
+│ ├── routes/ # Налаштування маршрутизації
+│ ├── store/ # Стан додатку (Redux/Redux Toolkit)
+│ ├── styles/ # Глобальні стилі
+│ ├── types/ # TypeScript типи та інтерфейси
+│ ├── utils/ # Допоміжні функції
+│ ├── App.tsx # Головний компонент
+│ ├── main.tsx # Вхідна точка
+│ └── vite-env.d.ts
 ├── .eslintrc.json
 ├── .gitignore
 ├── index.html
@@ -50,13 +50,11 @@ Formik + Yup - для роботи з формами та валідації
 Рекомендовані товари
 Останні додані товари
 
-
 Каталог - /catalog
 
 Фільтрація товарів за категоріями
 Сортування та пошук
 Відображення товарів у вигляді карток
-
 
 Сторінка товару - /listings/:id
 
@@ -66,7 +64,6 @@ Formik + Yup - для роботи з формами та валідації
 Контактна інформація продавця
 Чат з продавцем
 
-
 Особистий кабінет - /profile
 
 Особиста інформація
@@ -74,13 +71,11 @@ Formik + Yup - для роботи з формами та валідації
 Історія повідомлень
 Налаштування профілю
 
-
 Авторизація - /auth
 
 Реєстрація
 Вхід
 Відновлення паролю
-
 
 Додавання товару - /listings/create
 
@@ -88,13 +83,10 @@ Formik + Yup - для роботи з формами та валідації
 Завантаження зображень
 Вибір категорії
 
-
 Чат - /chat/:userId
 
 Історія повідомлень
 Відправка нових повідомлень
-
-
 
 API взаємодія
 На основі аналізу бекенду, ми будемо взаємодіяти з наступними API ендпоінтами:
@@ -105,7 +97,6 @@ POST /api/auth/register - реєстрація
 POST /api/auth/login - вхід
 GET /api/auth/me - отримання даних профілю
 
-
 Оголошення
 
 GET /api/listings - отримання списку оголошень
@@ -114,12 +105,10 @@ POST /api/listings - створення оголошення
 PUT /api/listings/:id - оновлення оголошення
 DELETE /api/listings/:id - видалення оголошення
 
-
 Категорії
 
 GET /api/categories - отримання списку категорій
 GET /api/categories/tree - отримання дерева категорій
-
 
 Чат
 
@@ -127,13 +116,10 @@ GET /api/chat/conversations - отримання списку бесід
 GET /api/chat/conversations/:userId - отримання повідомлень з користувачем
 POST /api/chat/messages - відправка повідомлення
 
-
 Платежі
 
 POST /api/transactions - створення платежу
 GET /api/transactions - отримання списку платежів
-
-
 
 Початковий план розробки
 
@@ -147,8 +133,6 @@ GET /api/transactions - отримання списку платежів
 Реалізація особистого кабінету
 Інтеграція чату та повідомлень
 Тестування та оптимізація
-
-
 
 # Getting Started with Create React App
 

@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { categoriesAPI, listingsAPI } from '../api/apiClient';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { categoriesAPI, listingsAPI } from "../api/apiClient";
 
 // Інтерфейси для типізації
 export interface Category {
@@ -44,8 +44,8 @@ interface FilterParams {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'createdAt' | 'price' | 'views';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "createdAt" | "price" | "views";
+  sortOrder?: "asc" | "desc";
 }
 
 interface ListingsResponse {
@@ -70,7 +70,7 @@ interface CatalogState {
     limit: number;
     pages: number;
   };
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
 }
 
@@ -83,8 +83,8 @@ const initialState: CatalogState = {
   filters: {
     page: 1,
     limit: 10,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortBy: "createdAt",
+    sortOrder: "desc",
   },
   meta: {
     total: 0,
@@ -92,62 +92,71 @@ const initialState: CatalogState = {
     limit: 10,
     pages: 0,
   },
-  status: 'idle',
+  status: "idle",
   error: null,
 };
 
 // Асинхронні thunks для запитів до API
 export const fetchCategories = createAsyncThunk(
-  'catalog/fetchCategories',
+  "catalog/fetchCategories",
   async (_, { rejectWithValue }) => {
     try {
       const response = await categoriesAPI.getAll();
       return response.data.data.categories;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Помилка завантаження категорій');
+      return rejectWithValue(
+        error.response?.data?.message || "Помилка завантаження категорій",
+      );
     }
-  }
+  },
 );
 
 export const fetchCategoryTree = createAsyncThunk(
-  'catalog/fetchCategoryTree',
+  "catalog/fetchCategoryTree",
   async (_, { rejectWithValue }) => {
     try {
       const response = await categoriesAPI.getTree();
       return response.data.data.categoryTree;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Помилка завантаження дерева категорій');
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Помилка завантаження дерева категорій",
+      );
     }
-  }
+  },
 );
 
 export const fetchCategoryBySlug = createAsyncThunk(
-  'catalog/fetchCategoryBySlug',
+  "catalog/fetchCategoryBySlug",
   async (slug: string, { rejectWithValue }) => {
     try {
       const response = await categoriesAPI.getBySlug(slug);
       return response.data.data.category;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Категорію не знайдено');
+      return rejectWithValue(
+        error.response?.data?.message || "Категорію не знайдено",
+      );
     }
-  }
+  },
 );
 
 export const fetchListings = createAsyncThunk(
-  'catalog/fetchListings',
+  "catalog/fetchListings",
   async (params: FilterParams, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getAll(params);
       return response.data.data as ListingsResponse;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Помилка завантаження оголошень');
+      return rejectWithValue(
+        error.response?.data?.message || "Помилка завантаження оголошень",
+      );
     }
-  }
+  },
 );
 
 // Створення Redux slice
 const catalogSlice = createSlice({
-  name: 'catalog',
+  name: "catalog",
   initialState,
   reducers: {
     setFilters: (state, action: PayloadAction<FilterParams>) => {
@@ -157,8 +166,8 @@ const catalogSlice = createSlice({
       state.filters = {
         page: 1,
         limit: 10,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
+        sortBy: "createdAt",
+        sortOrder: "desc",
       };
     },
     setCurrentPage: (state, action: PayloadAction<number>) => {
@@ -169,60 +178,61 @@ const catalogSlice = createSlice({
     // Обробка результатів fetchCategories
     builder
       .addCase(fetchCategories.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.categories = action.payload;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
-        state.status = 'failed';
+        state.status = "failed";
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів fetchCategoryTree
       .addCase(fetchCategoryTree.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchCategoryTree.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.categoryTree = action.payload;
       })
       .addCase(fetchCategoryTree.rejected, (state, action) => {
-        state.status = 'failed';
+        state.status = "failed";
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів fetchCategoryBySlug
       .addCase(fetchCategoryBySlug.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
         state.currentCategory = null;
       })
       .addCase(fetchCategoryBySlug.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.currentCategory = action.payload;
       })
       .addCase(fetchCategoryBySlug.rejected, (state, action) => {
-        state.status = 'failed';
+        state.status = "failed";
         state.error = action.payload as string;
         state.currentCategory = null;
       })
-      
+
       // Обробка результатів fetchListings
       .addCase(fetchListings.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchListings.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.status = "succeeded";
         state.listings = action.payload.listings;
         state.meta = action.payload.meta;
       })
       .addCase(fetchListings.rejected, (state, action) => {
-        state.status = 'failed';
+        state.status = "failed";
         state.error = action.payload as string;
       });
   },
 });
 
-export const { setFilters, resetFilters, setCurrentPage } = catalogSlice.actions;
+export const { setFilters, resetFilters, setCurrentPage } =
+  catalogSlice.actions;
 export default catalogSlice.reducer;

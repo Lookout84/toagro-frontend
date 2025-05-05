@@ -1,9 +1,9 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import catalogReducer from './catalogSlice';
-import listingReducer from './listingSlice';
-import chatReducer from './chatSlice';
-import uiReducer from './uiSlice';
+import { configureStore } from "@reduxjs/toolkit";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+import catalogReducer from "./catalogSlice";
+import listingReducer from "./listingSlice";
+import chatReducer from "./chatSlice";
+import uiReducer from "./uiSlice";
 
 export const store = configureStore({
   reducer: {

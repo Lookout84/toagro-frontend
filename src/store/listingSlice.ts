@@ -1,7 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { listingsAPI } from '../api/apiClient';
-import { Listing } from './catalogSlice';
-import { toast } from 'react-toastify';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { listingsAPI } from "../api/apiClient";
+import { Listing } from "./catalogSlice";
+import { toast } from "react-toastify";
 
 interface ListingState {
   currentListing: Listing | null;
@@ -22,77 +22,87 @@ const initialState: ListingState = {
 
 // Асинхронні thunks для запитів до API
 export const fetchListingById = createAsyncThunk(
-  'listing/fetchListingById',
+  "listing/fetchListingById",
   async (id: number, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getById(id);
       return response.data.data.listing;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Помилка завантаження оголошення');
+      return rejectWithValue(
+        error.response?.data?.message || "Помилка завантаження оголошення",
+      );
     }
-  }
+  },
 );
 
 export const fetchUserListings = createAsyncThunk(
-  'listing/fetchUserListings',
+  "listing/fetchUserListings",
   async (_, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getUserListings();
       return response.data.data.listings;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Помилка завантаження ваших оголошень');
+      return rejectWithValue(
+        error.response?.data?.message || "Помилка завантаження ваших оголошень",
+      );
     }
-  }
+  },
 );
 
 export const createListing = createAsyncThunk(
-  'listing/createListing',
+  "listing/createListing",
   async (formData: any, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.create(formData);
-      toast.success('Оголошення успішно створено!');
+      toast.success("Оголошення успішно створено!");
       return response.data.data.listing;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Помилка створення оголошення';
+      const errorMessage =
+        error.response?.data?.message || "Помилка створення оголошення";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const updateListing = createAsyncThunk(
-  'listing/updateListing',
-  async ({ id, formData }: { id: number; formData: any }, { rejectWithValue }) => {
+  "listing/updateListing",
+  async (
+    { id, formData }: { id: number; formData: any },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await listingsAPI.update(id, formData);
-      toast.success('Оголошення успішно оновлено!');
+      toast.success("Оголошення успішно оновлено!");
       return response.data.data.listing;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Помилка оновлення оголошення';
+      const errorMessage =
+        error.response?.data?.message || "Помилка оновлення оголошення";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const deleteListing = createAsyncThunk(
-  'listing/deleteListing',
+  "listing/deleteListing",
   async (id: number, { rejectWithValue }) => {
     try {
       await listingsAPI.delete(id);
-      toast.success('Оголошення успішно видалено!');
+      toast.success("Оголошення успішно видалено!");
       return id;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Помилка видалення оголошення';
+      const errorMessage =
+        error.response?.data?.message || "Помилка видалення оголошення";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Створення Redux slice
 const listingSlice = createSlice({
-  name: 'listing',
+  name: "listing",
   initialState,
   reducers: {
     clearCurrentListing: (state) => {
@@ -117,7 +127,7 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів fetchUserListings
       .addCase(fetchUserListings.pending, (state) => {
         state.isLoading = true;
@@ -131,7 +141,7 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів createListing
       .addCase(createListing.pending, (state) => {
         state.isLoading = true;
@@ -145,7 +155,7 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів updateListing
       .addCase(updateListing.pending, (state) => {
         state.isLoading = true;
@@ -154,9 +164,11 @@ const listingSlice = createSlice({
       .addCase(updateListing.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentListing = action.payload;
-        
+
         // Оновлюємо оголошення в списку оголошень користувача
-        const index = state.userListings.findIndex(listing => listing.id === action.payload.id);
+        const index = state.userListings.findIndex(
+          (listing) => listing.id === action.payload.id,
+        );
         if (index !== -1) {
           state.userListings[index] = action.payload;
         }
@@ -165,7 +177,7 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Обробка результатів deleteListing
       .addCase(deleteListing.pending, (state) => {
         state.isLoading = true;
@@ -173,12 +185,17 @@ const listingSlice = createSlice({
       })
       .addCase(deleteListing.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Видаляємо оголошення зі списку оголошень користувача
-        state.userListings = state.userListings.filter(listing => listing.id !== action.payload);
-        
+        state.userListings = state.userListings.filter(
+          (listing) => listing.id !== action.payload,
+        );
+
         // Якщо видаляємо поточне оголошення, очищаємо його
-        if (state.currentListing && state.currentListing.id === action.payload) {
+        if (
+          state.currentListing &&
+          state.currentListing.id === action.payload
+        ) {
           state.currentListing = null;
         }
       })

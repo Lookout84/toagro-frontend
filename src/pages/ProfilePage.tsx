@@ -1,75 +1,90 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useAppDispatch, useAppSelector } from '../store';
-import { fetchUserListings, deleteListing } from '../store/listingSlice';
+import { useState, useEffect } from "react";
 import {
-  User, Settings, LogOut, ListOrdered, Scale, Plus,
-  Edit2, Trash2, AlertTriangle, ExternalLink
-} from 'lucide-react';
-import Loader from '../components/common/Loader';
-import ListingCard from '../components/ui/ListingCard';
+  useNavigate,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useAppDispatch, useAppSelector } from "../store";
+import { fetchUserListings, deleteListing } from "../store/listingSlice";
+import {
+  User,
+  Settings,
+  LogOut,
+  ListOrdered,
+  Scale,
+  Plus,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  ExternalLink,
+} from "lucide-react";
+import Loader from "../components/common/Loader";
+import ListingCard from "../components/ui/ListingCard";
 
 // Компонент особистої інформації
 const ProfileInfo = () => {
   const { user, updateUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phoneNumber: user?.phoneNumber || '',
-    avatar: user?.avatar || '',
+    name: user?.name || "",
+    phoneNumber: user?.phoneNumber || "",
+    avatar: user?.avatar || "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Оновлення форми при зміні користувача
   useEffect(() => {
     if (user) {
       setFormData({
         name: user.name,
-        phoneNumber: user.phoneNumber || '',
-        avatar: user.avatar || '',
+        phoneNumber: user.phoneNumber || "",
+        avatar: user.avatar || "",
       });
     }
   }, [user]);
-  
+
   // Обробник зміни полів форми
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
     });
   };
-  
+
   // Обробник відправки форми
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       await updateUserProfile(formData);
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">
           Особиста інформація
         </h2>
-        
+
         {isEditing ? (
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Ім'я та прізвище
                 </label>
                 <input
@@ -82,9 +97,12 @@ const ProfileInfo = () => {
                   required
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="phoneNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Номер телефону
                 </label>
                 <input
@@ -97,9 +115,12 @@ const ProfileInfo = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="avatar"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   URL фото профілю
                 </label>
                 <input
@@ -112,16 +133,16 @@ const ProfileInfo = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
-              
+
               <div className="flex space-x-3 pt-3">
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Збереження...' : 'Зберегти зміни'}
+                  {isSubmitting ? "Збереження..." : "Зберегти зміни"}
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
@@ -137,9 +158,9 @@ const ProfileInfo = () => {
             <div className="flex items-start mb-6">
               <div className="mr-4">
                 {user?.avatar ? (
-                  <img 
-                    src={user.avatar} 
-                    alt={user.name} 
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
                     className="w-20 h-20 rounded-full object-cover"
                   />
                 ) : (
@@ -148,7 +169,7 @@ const ProfileInfo = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex-1">
                 <h3 className="text-lg font-medium text-gray-900">
                   {user?.name}
@@ -158,12 +179,12 @@ const ProfileInfo = () => {
                   <p className="text-gray-600">{user?.phoneNumber}</p>
                 )}
                 <p className="text-sm text-gray-500 mt-1">
-                  {user?.isVerified 
-                    ? 'Підтверджений користувач' 
-                    : 'Непідтверджений користувач'}
+                  {user?.isVerified
+                    ? "Підтверджений користувач"
+                    : "Непідтверджений користувач"}
                 </p>
               </div>
-              
+
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center text-green-600 hover:text-green-700"
@@ -172,7 +193,7 @@ const ProfileInfo = () => {
                 Редагувати
               </button>
             </div>
-            
+
             <div className="mt-4 pt-4 border-t border-gray-200">
               <h4 className="font-medium text-gray-900 mb-2">Налаштування</h4>
               <div className="space-y-3">
@@ -195,24 +216,23 @@ const ProfileInfo = () => {
 // Компонент списку оголошень користувача
 const UserListings = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  
+
   const { userListings, isLoading } = useAppSelector((state) => state.listing);
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
-  
+
   // Завантаження оголошень користувача
   useEffect(() => {
     dispatch(fetchUserListings());
   }, [dispatch]);
-  
+
   // Обробник для відкриття діалогу видалення
   const handleOpenDeleteModal = (id: number) => {
     setListingToDelete(id);
     setShowDeleteModal(true);
   };
-  
+
   // Обробник для підтвердження видалення
   const handleConfirmDelete = async () => {
     if (listingToDelete) {
@@ -221,11 +241,11 @@ const UserListings = () => {
       setListingToDelete(null);
     }
   };
-  
+
   if (isLoading) {
     return <Loader />;
   }
-  
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-6">
@@ -233,7 +253,7 @@ const UserListings = () => {
           <h2 className="text-xl font-semibold text-gray-900">
             Мої оголошення
           </h2>
-          
+
           <Link
             to="/listings/create"
             className="flex items-center text-green-600 hover:text-green-700"
@@ -242,7 +262,7 @@ const UserListings = () => {
             Додати оголошення
           </Link>
         </div>
-        
+
         {userListings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <ListOrdered size={48} className="text-gray-300 mb-4" />
@@ -261,7 +281,7 @@ const UserListings = () => {
             {userListings.map((listing) => (
               <div key={listing.id} className="relative">
                 <ListingCard listing={listing} />
-                
+
                 {/* Кнопки керування */}
                 <div className="absolute top-2 right-2 flex space-x-1">
                   <Link
@@ -291,7 +311,7 @@ const UserListings = () => {
           </div>
         )}
       </div>
-      
+
       {/* Модальне вікно підтвердження видалення */}
       {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -300,11 +320,12 @@ const UserListings = () => {
               <AlertTriangle size={24} className="mr-2" />
               <h3 className="text-lg font-semibold">Видалення оголошення</h3>
             </div>
-            
+
             <p className="text-gray-700 mb-6">
-              Ви дійсно бажаєте видалити це оголошення? Цю дію неможливо скасувати.
+              Ви дійсно бажаєте видалити це оголошення? Цю дію неможливо
+              скасувати.
             </p>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -312,7 +333,7 @@ const UserListings = () => {
               >
                 Скасувати
               </button>
-              
+
               <button
                 onClick={handleConfirmDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
@@ -330,17 +351,16 @@ const UserListings = () => {
 // Компонент порівняння оголошень
 const CompareListings = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  
+
   const [compareListings, setCompareListings] = useState<any[]>([]);
-  
+
   // Отримання оголошень для порівняння з параметрів навігації
   useEffect(() => {
     if (location.state?.listings) {
       setCompareListings(location.state.listings);
     }
   }, [location.state]);
-  
+
   if (compareListings.length < 2) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -348,7 +368,7 @@ const CompareListings = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Порівняння оголошень
           </h2>
-          
+
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Scale size={48} className="text-gray-300 mb-4" />
             <p className="text-gray-600 mb-4">
@@ -365,21 +385,26 @@ const CompareListings = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">
           Порівняння оголошень
         </h2>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">Характеристика</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">
+                  Характеристика
+                </th>
                 {compareListings.map((listing) => (
-                  <th key={listing.id} className="text-left py-3 px-4 font-semibold text-gray-700">
+                  <th
+                    key={listing.id}
+                    className="text-left py-3 px-4 font-semibold text-gray-700"
+                  >
                     {listing.title}
                   </th>
                 ))}
@@ -392,59 +417,71 @@ const CompareListings = () => {
                 {compareListings.map((listing) => (
                   <td key={`${listing.id}-image`} className="py-3 px-4">
                     <img
-                      src={listing.images[0] || 'https://via.placeholder.com/100?text=Немає+фото'}
+                      src={
+                        listing.images[0] ||
+                        "https://via.placeholder.com/100?text=Немає+фото"
+                      }
                       alt={listing.title}
                       className="w-24 h-24 object-cover rounded-md"
                     />
                   </td>
                 ))}
               </tr>
-              
+
               {/* Ціна */}
               <tr className="border-b border-gray-200">
                 <td className="py-3 px-4 font-medium text-gray-700">Ціна</td>
                 {compareListings.map((listing) => (
-                  <td key={`${listing.id}-price`} className="py-3 px-4 font-bold text-gray-900">
-                    {new Intl.NumberFormat('uk-UA', {
-                      style: 'currency',
-                      currency: 'UAH',
+                  <td
+                    key={`${listing.id}-price`}
+                    className="py-3 px-4 font-bold text-gray-900"
+                  >
+                    {new Intl.NumberFormat("uk-UA", {
+                      style: "currency",
+                      currency: "UAH",
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     }).format(listing.price)}
                   </td>
                 ))}
               </tr>
-              
+
               {/* Категорія */}
               <tr className="border-b border-gray-200">
-                <td className="py-3 px-4 font-medium text-gray-700">Категорія</td>
+                <td className="py-3 px-4 font-medium text-gray-700">
+                  Категорія
+                </td>
                 {compareListings.map((listing) => (
                   <td key={`${listing.id}-category`} className="py-3 px-4">
                     {listing.category}
                   </td>
                 ))}
               </tr>
-              
+
               {/* Місцезнаходження */}
               <tr className="border-b border-gray-200">
-                <td className="py-3 px-4 font-medium text-gray-700">Місцезнаходження</td>
+                <td className="py-3 px-4 font-medium text-gray-700">
+                  Місцезнаходження
+                </td>
                 {compareListings.map((listing) => (
                   <td key={`${listing.id}-location`} className="py-3 px-4">
                     {listing.location}
                   </td>
                 ))}
               </tr>
-              
+
               {/* Дата публікації */}
               <tr className="border-b border-gray-200">
-                <td className="py-3 px-4 font-medium text-gray-700">Дата публікації</td>
+                <td className="py-3 px-4 font-medium text-gray-700">
+                  Дата публікації
+                </td>
                 {compareListings.map((listing) => (
                   <td key={`${listing.id}-date`} className="py-3 px-4">
-                    {new Date(listing.createdAt).toLocaleDateString('uk-UA')}
+                    {new Date(listing.createdAt).toLocaleDateString("uk-UA")}
                   </td>
                 ))}
               </tr>
-              
+
               {/* Опис */}
               <tr className="border-b border-gray-200">
                 <td className="py-3 px-4 font-medium text-gray-700">Опис</td>
@@ -462,17 +499,19 @@ const CompareListings = () => {
                   </td>
                 ))}
               </tr>
-              
+
               {/* Продавець */}
               <tr className="border-b border-gray-200">
-                <td className="py-3 px-4 font-medium text-gray-700">Продавець</td>
+                <td className="py-3 px-4 font-medium text-gray-700">
+                  Продавець
+                </td>
                 {compareListings.map((listing) => (
                   <td key={`${listing.id}-seller`} className="py-3 px-4">
                     {listing.user.name}
                   </td>
                 ))}
               </tr>
-              
+
               {/* Кнопка перегляду */}
               <tr>
                 <td className="py-3 px-4"></td>
@@ -500,43 +539,43 @@ const ProfilePage = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Вкладки профілю
   const tabs = [
     {
-      name: 'Профіль',
-      path: '/profile',
+      name: "Профіль",
+      path: "/profile",
       icon: <User size={20} />,
     },
     {
-      name: 'Мої оголошення',
-      path: '/profile/listings',
+      name: "Мої оголошення",
+      path: "/profile/listings",
       icon: <ListOrdered size={20} />,
     },
     {
-      name: 'Порівняння',
-      path: '/profile/compare',
+      name: "Порівняння",
+      path: "/profile/compare",
       icon: <Scale size={20} />,
     },
   ];
-  
+
   // Визначення активної вкладки
   const getActiveTab = () => {
-    if (location.pathname.startsWith('/profile/listings')) {
-      return '/profile/listings';
+    if (location.pathname.startsWith("/profile/listings")) {
+      return "/profile/listings";
     }
-    if (location.pathname.startsWith('/profile/compare')) {
-      return '/profile/compare';
+    if (location.pathname.startsWith("/profile/compare")) {
+      return "/profile/compare";
     }
-    return '/profile';
+    return "/profile";
   };
-  
+
   const activeTab = getActiveTab();
-  
+
   // Обробник виходу з облікового запису
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -544,7 +583,7 @@ const ProfilePage = () => {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         Особистий кабінет
       </h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Бічне меню */}
         <aside className="md:col-span-1">
@@ -556,15 +595,15 @@ const ProfilePage = () => {
                   to={tab.path}
                   className={`flex items-center px-4 py-3 ${
                     activeTab === tab.path
-                      ? 'bg-green-50 border-l-4 border-green-600 text-green-600'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? "bg-green-50 border-l-4 border-green-600 text-green-600"
+                      : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <span className="mr-3">{tab.icon}</span>
                   {tab.name}
                 </Link>
               ))}
-              
+
               <button
                 onClick={handleLogout}
                 className="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 w-full text-left"
@@ -575,7 +614,7 @@ const ProfilePage = () => {
             </nav>
           </div>
         </aside>
-        
+
         {/* Основний контент */}
         <div className="md:col-span-3">
           <Routes>

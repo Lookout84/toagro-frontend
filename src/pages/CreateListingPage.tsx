@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store';
-import { fetchCategories } from '../store/catalogSlice';
-import { createListing } from '../store/listingSlice';
-import { Upload, X, Plus, ChevronDown } from 'lucide-react';
-import Loader from '../components/common/Loader';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../store";
+import { fetchCategories } from "../store/catalogSlice";
+import { createListing } from "../store/listingSlice";
+import { Upload, X, Plus, ChevronDown } from "lucide-react";
 
 interface FormData {
   title: string;
@@ -16,51 +15,55 @@ interface FormData {
 }
 
 interface FormErrors {
-  title?: string;
-  description?: string;
-  price?: string;
-  categoryId?: string;
-  location?: string;
-  images?: string;
+  title?: string | undefined;
+  description?: string | undefined;
+  price?: string | undefined;
+  categoryId?: string | undefined;
+  location?: string | undefined;
+  images?: string | undefined;
 }
 
 const CreateListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  
-  const { categories, status: categoriesStatus } = useAppSelector((state) => state.catalog);
+
+  const { categories, status: categoriesStatus } = useAppSelector(
+    (state) => state.catalog,
+  );
   const { isLoading } = useAppSelector((state) => state.listing);
-  
+
   const [formData, setFormData] = useState<FormData>({
-    title: '',
-    description: '',
-    price: '',
-    categoryId: '',
-    location: '',
+    title: "",
+    description: "",
+    price: "",
+    categoryId: "",
+    location: "",
     images: [],
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Завантаження категорій при першому рендері
   useEffect(() => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
   }, [dispatch, categories.length]);
-  
+
   // Обробник зміни полів форми
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
     });
-    
+
     // Очищення помилки при зміні поля
     if (errors[name as keyof FormErrors]) {
       setErrors({
@@ -69,152 +72,163 @@ const CreateListingPage = () => {
       });
     }
   };
-  
+
   // Обробник завантаження зображень
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     handleFiles(Array.from(files));
   };
-  
+
   // Обробник перетягування файлів
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files.length > 0) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
   };
-  
+
   // Обробник перетягування файлів - стан перетягування
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
-  
+
   // Обробник перетягування файлів - вихід із зони
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
-  
+
   // Обробник видалення завантаженого зображення
   const handleRemoveImage = (index: number) => {
     const newImages = [...formData.images];
     newImages.splice(index, 1);
-    
+
     const newPreviewUrls = [...imagePreviewUrls];
     newPreviewUrls.splice(index, 1);
-    
+
     setFormData({
       ...formData,
       images: newImages,
     });
-    
+
     setImagePreviewUrls(newPreviewUrls);
   };
-  
+
   // Валідація форми
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
+
     if (!formData.title.trim()) {
-      newErrors.title = 'Введіть назву оголошення';
+      newErrors.title = "Введіть назву оголошення";
     }
-    
+
     if (!formData.description.trim()) {
-      newErrors.description = 'Введіть опис оголошення';
+      newErrors.description = "Введіть опис оголошення";
     }
-    
+
     if (!formData.price.trim()) {
-      newErrors.price = 'Введіть ціну';
-    } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
-      newErrors.price = 'Введіть коректну ціну';
+      newErrors.price = "Введіть ціну";
+    } else if (
+      isNaN(parseFloat(formData.price)) ||
+      parseFloat(formData.price) <= 0
+    ) {
+      newErrors.price = "Введіть коректну ціну";
     }
-    
+
     if (!formData.categoryId) {
-      newErrors.categoryId = 'Виберіть категорію';
+      newErrors.categoryId = "Виберіть категорію";
     }
-    
+
     if (!formData.location.trim()) {
-      newErrors.location = 'Введіть місце розташування';
+      newErrors.location = "Введіть місце розташування";
     }
-    
+
     if (formData.images.length === 0) {
-      newErrors.images = 'Завантажте хоча б одне зображення';
+      newErrors.images = "Завантажте хоча б одне зображення";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Обробник відправки форми
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     // Створення об'єкту FormData для відправки файлів
     const submitData = new FormData();
-    submitData.append('title', formData.title);
-    submitData.append('description', formData.description);
-    submitData.append('price', formData.price);
-    submitData.append('categoryId', formData.categoryId);
-    submitData.append('location', formData.location);
-    
+    submitData.append("title", formData.title);
+    submitData.append("description", formData.description);
+    submitData.append("price", formData.price);
+    submitData.append("categoryId", formData.categoryId);
+    submitData.append("location", formData.location);
+
     formData.images.forEach((image) => {
-      submitData.append('images', image);
+      submitData.append("images", image);
     });
-    
+
     const resultAction = await dispatch(createListing(submitData));
-    
+
     if (createListing.fulfilled.match(resultAction)) {
       // Перехід на сторінку створеного оголошення
       navigate(`/listings/${resultAction.payload.id}`);
     }
   };
-  
+
   // Обробник для роботи з файлами зображень
   const handleFiles = (files: File[]) => {
     // Перевірка типу файлів - тільки зображення
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const imageFiles = files.filter((file) => validImageTypes.includes(file.type));
-    
+    const validImageTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    const imageFiles = files.filter((file) =>
+      validImageTypes.includes(file.type),
+    );
+
     if (imageFiles.length === 0) {
       setErrors({
         ...errors,
-        images: 'Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)',
+        images:
+          "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
       });
       return;
     }
-    
+
     // Обмеження на кількість зображень
     const totalImages = formData.images.length + imageFiles.length;
     if (totalImages > 10) {
       setErrors({
         ...errors,
-        images: 'Максимальна кількість зображень - 10',
+        images: "Максимальна кількість зображень - 10",
       });
       return;
     }
-    
+
     // Створення URL для попереднього перегляду зображень
     const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file));
-    
+
     setFormData({
       ...formData,
       images: [...formData.images, ...imageFiles],
     });
-    
+
     setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
-    
+
     // Очищення помилки
     if (errors.images) {
       setErrors({
@@ -226,8 +240,10 @@ const CreateListingPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Створення нового оголошення</h1>
-      
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        Створення нового оголошення
+      </h1>
+
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="p-6">
           <form onSubmit={handleSubmit}>
@@ -236,7 +252,10 @@ const CreateListingPage = () => {
               <div className="space-y-6">
                 {/* Назва оголошення */}
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Назва оголошення *
                   </label>
                   <input
@@ -247,17 +266,20 @@ const CreateListingPage = () => {
                     onChange={handleInputChange}
                     placeholder="Наприклад: Трактор John Deere 6155M, 2020"
                     className={`w-full px-4 py-2 border ${
-                      errors.title ? 'border-red-500' : 'border-gray-300'
+                      errors.title ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                   />
                   {errors.title && (
                     <p className="mt-1 text-sm text-red-500">{errors.title}</p>
                   )}
                 </div>
-                
+
                 {/* Опис */}
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Опис *
                   </label>
                   <textarea
@@ -268,17 +290,22 @@ const CreateListingPage = () => {
                     placeholder="Детальний опис товару, технічні характеристики, стан, комплектація тощо"
                     rows={8}
                     className={`w-full px-4 py-2 border ${
-                      errors.description ? 'border-red-500' : 'border-gray-300'
+                      errors.description ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                   />
                   {errors.description && (
-                    <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.description}
+                    </p>
                   )}
                 </div>
-                
+
                 {/* Ціна */}
                 <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="price"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Ціна (грн) *
                   </label>
                   <input
@@ -291,7 +318,7 @@ const CreateListingPage = () => {
                     min="0"
                     step="1"
                     className={`w-full px-4 py-2 border ${
-                      errors.price ? 'border-red-500' : 'border-gray-300'
+                      errors.price ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                   />
                   {errors.price && (
@@ -299,12 +326,15 @@ const CreateListingPage = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* Права колонка */}
               <div className="space-y-6">
                 {/* Категорія */}
                 <div>
-                  <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="categoryId"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Категорія *
                   </label>
                   <div className="relative">
@@ -314,11 +344,11 @@ const CreateListingPage = () => {
                       value={formData.categoryId}
                       onChange={handleInputChange}
                       className={`appearance-none w-full px-4 py-2 border ${
-                        errors.categoryId ? 'border-red-500' : 'border-gray-300'
+                        errors.categoryId ? "border-red-500" : "border-gray-300"
                       } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                     >
                       <option value="">Виберіть категорію</option>
-                      {categoriesStatus === 'loading' ? (
+                      {categoriesStatus === "loading" ? (
                         <option disabled>Завантаження категорій...</option>
                       ) : (
                         categories.map((category) => (
@@ -333,13 +363,18 @@ const CreateListingPage = () => {
                     </div>
                   </div>
                   {errors.categoryId && (
-                    <p className="mt-1 text-sm text-red-500">{errors.categoryId}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.categoryId}
+                    </p>
                   )}
                 </div>
-                
+
                 {/* Місцезнаходження */}
                 <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="location"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Місцезнаходження *
                   </label>
                   <input
@@ -350,28 +385,34 @@ const CreateListingPage = () => {
                     onChange={handleInputChange}
                     placeholder="Наприклад: Київ, Київська область"
                     className={`w-full px-4 py-2 border ${
-                      errors.location ? 'border-red-500' : 'border-gray-300'
+                      errors.location ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                   />
                   {errors.location && (
-                    <p className="mt-1 text-sm text-red-500">{errors.location}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.location}
+                    </p>
                   )}
                 </div>
-                
+
                 {/* Завантаження зображень */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Фотографії *
                   </label>
-                  
+
                   <div
                     className={`border-2 border-dashed ${
-                      isDragging ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                      isDragging
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-300"
                     } rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
-                    onClick={() => document.getElementById('image-upload')?.click()}
+                    onClick={() =>
+                      document.getElementById("image-upload")?.click()
+                    }
                   >
                     <input
                       type="file"
@@ -381,21 +422,22 @@ const CreateListingPage = () => {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    
+
                     <Upload size={36} className="mx-auto text-gray-400 mb-2" />
-                    
+
                     <p className="text-sm text-gray-700 mb-1">
                       Перетягніть зображення сюди або натисніть, щоб вибрати
                     </p>
                     <p className="text-xs text-gray-500">
-                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10 фото.
+                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10
+                      фото.
                     </p>
                   </div>
-                  
+
                   {errors.images && (
                     <p className="mt-2 text-sm text-red-500">{errors.images}</p>
                   )}
-                  
+
                   {/* Попередній перегляд завантажених зображень */}
                   {imagePreviewUrls.length > 0 && (
                     <div className="mt-4">
@@ -425,12 +467,14 @@ const CreateListingPage = () => {
                             </button>
                           </div>
                         ))}
-                        
+
                         {/* Кнопка для додавання нових зображень */}
                         {imagePreviewUrls.length < 10 && (
                           <div
                             className="border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                            onClick={() => document.getElementById('image-upload')?.click()}
+                            onClick={() =>
+                              document.getElementById("image-upload")?.click()
+                            }
                           >
                             <Plus size={24} className="text-gray-400" />
                           </div>
@@ -441,7 +485,7 @@ const CreateListingPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Кнопки дій */}
             <div className="mt-8 flex items-center justify-end space-x-4">
               <button
@@ -451,13 +495,13 @@ const CreateListingPage = () => {
               >
                 Скасувати
               </button>
-              
+
               <button
                 type="submit"
                 disabled={isLoading}
                 className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Публікація...' : 'Опублікувати оголошення'}
+                {isLoading ? "Публікація..." : "Опублікувати оголошення"}
               </button>
             </div>
           </form>

@@ -1,24 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Search, Menu, X, User, MessageSquare, ShoppingCart, ChevronDown } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../store';
-import { fetchCategories, fetchCategoryTree } from '../../store/catalogSlice';
-import { chatAPI } from '../../api/apiClient';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import {
+  Search,
+  Menu,
+  X,
+  User,
+  MessageSquare,
+  ShoppingCart,
+  ChevronDown,
+} from "lucide-react";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { fetchCategories, fetchCategoryTree } from "../../store/catalogSlice";
+import { chatAPI } from "../../api/apiClient";
 
 const Header = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { categories, categoryTree } = useAppSelector((state) => state.catalog);
-  
+
   // Завантаження категорій при першому рендері
   useEffect(() => {
     if (categories.length === 0) {
@@ -26,7 +34,7 @@ const Header = () => {
       dispatch(fetchCategoryTree());
     }
   }, [dispatch, categories.length]);
-  
+
   // Отримання кількості непрочитаних повідомлень для авторизованих користувачів
   useEffect(() => {
     if (isAuthenticated) {
@@ -35,40 +43,41 @@ const Header = () => {
           const response = await chatAPI.getUnreadCount();
           setUnreadCount(response.data.data.count);
         } catch (error) {
-          console.error('Error fetching unread messages count:', error);
+          console.error("Error fetching unread messages count:", error);
         }
       };
-      
+
       fetchUnreadCount();
-      
+
       // Встановлюємо інтервал для періодичного оновлення
       const interval = setInterval(fetchUnreadCount, 60000); // Оновлення кожну хвилину
-      
+
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isAuthenticated]);
-  
+
   // Обробник пошуку
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/catalog?search=${encodeURIComponent(searchTerm)}`);
-      setSearchTerm('');
+      setSearchTerm("");
     }
   };
-  
+
   // Закриття меню при навігації
   const handleNavigation = () => {
     setIsMenuOpen(false);
     setIsCategoryMenuOpen(false);
     setIsUserMenuOpen(false);
   };
-  
+
   // Обробник виходу
   const handleLogout = () => {
     logout();
     handleNavigation();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -78,14 +87,40 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Логотип */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center" onClick={handleNavigation}>
+            <Link
+              to="/"
+              className="flex items-center"
+              onClick={handleNavigation}
+            >
               <svg viewBox="0 0 200 50" className="h-10 w-40">
-                <path d="M10 10 L40 10 M25 10 L25 40" stroke="#059669" strokeWidth="8" strokeLinecap="round"/>
-                <circle cx="65" cy="25" r="15" stroke="#059669" strokeWidth="8" fill="none"/>
-                <text x="95" y="35" fontFamily="Arial" fontWeight="bold" fontSize="30" fill="#1F2937">
+                <path
+                  d="M10 10 L40 10 M25 10 L25 40"
+                  stroke="#059669"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx="65"
+                  cy="25"
+                  r="15"
+                  stroke="#059669"
+                  strokeWidth="8"
+                  fill="none"
+                />
+                <text
+                  x="95"
+                  y="35"
+                  fontFamily="Arial"
+                  fontWeight="bold"
+                  fontSize="30"
+                  fill="#1F2937"
+                >
                   AGRO
                 </text>
-                <path d="M160 15 Q170 5, 180 15 Q170 25, 160 15" fill="#059669"/>
+                <path
+                  d="M160 15 Q170 5, 180 15 Q170 25, 160 15"
+                  fill="#059669"
+                />
               </svg>
             </Link>
           </div>
@@ -101,8 +136,8 @@ const Header = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="absolute right-3 top-2.5 text-gray-400 hover:text-green-500"
                 >
                   <Search size={20} />
@@ -117,21 +152,35 @@ const Header = () => {
               <>
                 {/* Іконка порівняння */}
                 <div className="flex items-center cursor-pointer group">
-                  <Link to="/profile/compare" className="flex items-center" onClick={handleNavigation}>
-                    <ShoppingCart className="text-gray-600 group-hover:text-green-600" size={24} />
+                  <Link
+                    to="/profile/compare"
+                    className="flex items-center"
+                    onClick={handleNavigation}
+                  >
+                    <ShoppingCart
+                      className="text-gray-600 group-hover:text-green-600"
+                      size={24}
+                    />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-green-600 hidden lg:inline">
                       Порівняти
                     </span>
                   </Link>
                 </div>
-                
+
                 {/* Іконка повідомлень */}
                 <div className="flex items-center cursor-pointer group relative">
-                  <Link to="/chat" className="flex items-center" onClick={handleNavigation}>
-                    <MessageSquare className="text-gray-600 group-hover:text-green-600" size={24} />
+                  <Link
+                    to="/chat"
+                    className="flex items-center"
+                    onClick={handleNavigation}
+                  >
+                    <MessageSquare
+                      className="text-gray-600 group-hover:text-green-600"
+                      size={24}
+                    />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-green-600 hidden lg:inline">
@@ -139,20 +188,23 @@ const Header = () => {
                     </span>
                   </Link>
                 </div>
-                
+
                 {/* Іконка профілю з випадаючим меню */}
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center cursor-pointer group"
                   >
-                    <User className="text-gray-600 group-hover:text-green-600" size={24} />
+                    <User
+                      className="text-gray-600 group-hover:text-green-600"
+                      size={24}
+                    />
                     <span className="ml-2 text-gray-600 group-hover:text-green-600">
-                      {user?.name.split(' ')[0]}
+                      {user?.name.split(" ")[0]}
                     </span>
                     <ChevronDown size={16} className="ml-1 text-gray-400" />
                   </button>
-                  
+
                   {/* Меню користувача */}
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -231,8 +283,8 @@ const Header = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="absolute right-3 top-2.5 text-gray-400 hover:text-green-500"
               >
                 <Search size={20} />
@@ -246,7 +298,7 @@ const Header = () => {
       <nav className="bg-green-600 text-white">
         <div className="container mx-auto px-4">
           <div className="hidden md:flex items-center space-x-8 h-12">
-            <div 
+            <div
               className="flex items-center cursor-pointer hover:bg-green-700 px-4 h-full relative"
               onMouseEnter={() => setIsCategoryMenuOpen(true)}
               onMouseLeave={() => setIsCategoryMenuOpen(false)}
@@ -254,7 +306,7 @@ const Header = () => {
               <Menu size={20} className="mr-2" />
               <span>Каталог</span>
               <ChevronDown size={16} className="ml-2" />
-              
+
               {/* Випадаюче меню категорій */}
               {isCategoryMenuOpen && (
                 <div className="absolute top-full left-0 mt-0 w-64 bg-white border border-gray-200 rounded-b-md shadow-lg z-50 text-gray-700">
@@ -267,11 +319,15 @@ const Header = () => {
                           onClick={handleNavigation}
                         >
                           {category.name}
-                          {category.children && category.children.length > 0 && (
-                            <ChevronDown size={16} className="absolute right-4 top-3" />
-                          )}
+                          {category.children &&
+                            category.children.length > 0 && (
+                              <ChevronDown
+                                size={16}
+                                className="absolute right-4 top-3"
+                              />
+                            )}
                         </Link>
-                        
+
                         {/* Підменю для підкатегорій */}
                         {category.children && category.children.length > 0 && (
                           <div className="absolute left-full top-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 hidden group-hover:block">
@@ -295,23 +351,39 @@ const Header = () => {
                 </div>
               )}
             </div>
-            
-            <Link to="/catalog?category=new" className="hover:text-green-200" onClick={handleNavigation}>
+
+            <Link
+              to="/catalog?category=new"
+              className="hover:text-green-200"
+              onClick={handleNavigation}
+            >
               Нова техніка
             </Link>
-            <Link to="/catalog?category=used" className="hover:text-green-200" onClick={handleNavigation}>
+            <Link
+              to="/catalog?category=used"
+              className="hover:text-green-200"
+              onClick={handleNavigation}
+            >
               Вживана техніка
             </Link>
-            <Link to="/catalog?category=parts" className="hover:text-green-200" onClick={handleNavigation}>
+            <Link
+              to="/catalog?category=parts"
+              className="hover:text-green-200"
+              onClick={handleNavigation}
+            >
               Запчастини
             </Link>
-            <Link to="/catalog?category=service" className="hover:text-green-200" onClick={handleNavigation}>
+            <Link
+              to="/catalog?category=service"
+              className="hover:text-green-200"
+              onClick={handleNavigation}
+            >
               Сервіс
             </Link>
-            
+
             {isAuthenticated && (
-              <Link 
-                to="/listings/create" 
+              <Link
+                to="/listings/create"
                 className="hover:text-green-200"
                 onClick={handleNavigation}
               >
@@ -355,7 +427,7 @@ const Header = () => {
               >
                 Сервіс
               </Link>
-              
+
               <div className="border-t border-gray-200 my-2 pt-2">
                 {isAuthenticated ? (
                   <>

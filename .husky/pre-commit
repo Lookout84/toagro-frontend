@@ -1,0 +1,8 @@
+# Перевірка на помилки TypeScript
+npm run typecheck
+
+# Перевірка лінтером
+npm run lint
+
+# Форматування коду
+npm run format
