@@ -48,23 +48,12 @@ export const authAPI = {
     return api.post("/auth/login", { email, password });
   },
 
-  register: (formData: any) => {
+  register: (formData: { name: string; email: string; password: string }) => {
     return api.post("/auth/register", formData);
   },
 
-  getProfile: () => {
-    return api.get("/auth/me");
-  },
-
-  updateProfile: (formData: any) => {
-    return api.put("/auth/me", formData);
-  },
-
-  changePassword: (currentPassword: string, newPassword: string) => {
-    return api.post("/auth/change-password", {
-      currentPassword,
-      newPassword,
-    });
+  verifyEmail: (token: string) => {
+    return api.get(`/auth/verify/${token}`);
   },
 
   forgotPassword: (email: string) => {
@@ -74,11 +63,26 @@ export const authAPI = {
   resetPassword: (token: string, password: string) => {
     return api.post(`/auth/reset-password/${token}`, { password });
   },
+
+  getProfile: () => {
+    return api.get("/auth/me");
+  },
+
+  updateProfile: (formData: { name?: string; email?: string; password?: string }) => {
+    return api.put("/auth/me", formData);
+  },
+
+  changePassword: (currentPassword: string, newPassword: string) => {
+    return api.post("/auth/change-password", {
+      currentPassword,
+      newPassword,
+    });
+  },
 };
 
 // API для оголошень
 export const listingsAPI = {
-  getAll: (params?: any) => {
+  getAll: (params?: Record<string, unknown>) => {
     return api.get("/listings", { params });
   },
 
@@ -90,11 +94,11 @@ export const listingsAPI = {
     return api.get("/listings/user/me");
   },
 
-  create: (formData: any) => {
+  create: (formData: { name: string; description: string; price: number; categoryId: number }) => {
     return api.post("/listings", formData);
   },
 
-  update: (id: number, formData: any) => {
+  update: (id: number, formData: { name?: string; description?: string; price?: number; categoryId?: number }) => {
     return api.put(`/listings/${id}`, formData);
   },
 
@@ -105,7 +109,7 @@ export const listingsAPI = {
 
 // API для категорій
 export const categoriesAPI = {
-  getAll: (params?: any) => {
+  getAll: (params?: Record<string, unknown>) => {
     return api.get("/categories", { params });
   },
 
@@ -119,6 +123,19 @@ export const categoriesAPI = {
 
   getTree: () => {
     return api.get("/categories/tree");
+  },
+
+  // Адміністративні функції
+  create: (data: any) => {
+    return api.post("/categories", data);
+  },
+
+  update: (id: number, data: any) => {
+    return api.put(`/categories/${id}`, data);
+  },
+
+  delete: (id: number) => {
+    return api.delete(`/categories/${id}`);
   },
 };
 
@@ -150,17 +167,297 @@ export const chatAPI = {
 };
 
 // API для транзакцій/оплат
-export const paymentsAPI = {
+export const transactionsAPI = {
   create: (formData: any) => {
     return api.post("/transactions", formData);
   },
 
-  getAll: () => {
-    return api.get("/transactions");
+  getAll: (params?: any) => {
+    return api.get("/transactions", { params });
   },
 
   getById: (transactionId: string) => {
     return api.get(`/transactions/${transactionId}`);
+  },
+};
+
+// API для сповіщень
+export const notificationsAPI = {
+  // Налаштування сповіщень
+  getSettings: () => {
+    return api.get("/notifications/settings");
+  },
+
+  updateSettings: (settings: any) => {
+    return api.put("/notifications/settings", settings);
+  },
+
+  getPreferences: () => {
+    return api.get("/notifications/preferences");
+  },
+
+  updatePreferences: (preferences: any) => {
+    return api.put("/notifications/preferences", preferences);
+  },
+
+  // Історія сповіщень
+  getHistory: (params?: any) => {
+    return api.get("/notifications/history", { params });
+  },
+
+  getNotificationDetails: (id: number) => {
+    return api.get(`/notifications/history/${id}`);
+  },
+
+  deleteNotification: (id: number) => {
+    return api.delete(`/notifications/history/${id}`);
+  },
+
+  markAllAsRead: () => {
+    return api.post("/notifications/history/read");
+  },
+
+  markAsRead: (id: number) => {
+    return api.post(`/notifications/history/${id}/read`);
+  },
+
+  // Тестові сповіщення (для налагодження)
+  sendTestEmail: () => {
+    return api.post("/notifications/test-email");
+  },
+
+  sendTestSms: () => {
+    return api.post("/notifications/test-sms");
+  },
+
+  sendTestPush: () => {
+    return api.post("/notifications/test-push");
+  },
+};
+
+// API для адмін-панелі
+export const adminAPI = {
+  getDashboardStats: () => {
+    return api.get("/admin/dashboard");
+  },
+
+  getUsers: (params?: any) => {
+    return api.get("/admin/users", { params });
+  },
+
+  updateUserRole: (userId: number, role: string) => {
+    return api.put(`/admin/users/${userId}/role`, { role });
+  },
+
+  getListings: (params?: any) => {
+    return api.get("/admin/listings", { params });
+  },
+
+  getPayments: (params?: any) => {
+    return api.get("/admin/payments", { params });
+  },
+
+  getCategories: () => {
+    return api.get("/admin/categories");
+  },
+
+  // API для шаблонів сповіщень (адмін)
+  getNotificationTemplates: () => {
+    return api.get("/notifications/templates");
+  },
+
+  getNotificationTemplate: (id: number) => {
+    return api.get(`/notifications/templates/${id}`);
+  },
+
+  createNotificationTemplate: (template: any) => {
+    return api.post("/notifications/templates", template);
+  },
+
+  updateNotificationTemplate: (id: number, template: any) => {
+    return api.put(`/notifications/templates/${id}`, template);
+  },
+
+  deleteNotificationTemplate: (id: number) => {
+    return api.delete(`/notifications/templates/${id}`);
+  },
+
+  // API для масових розсилок
+  sendBulkEmails: (data: any) => {
+    return api.post("/bulk-notifications/email", data);
+  },
+
+  sendBulkSms: (data: any) => {
+    return api.post("/bulk-notifications/sms", data);
+  },
+
+  sendBulkPush: (data: any) => {
+    return api.post("/bulk-notifications/push", data);
+  },
+
+  getBulkTasks: () => {
+    return api.get("/bulk-notifications/tasks");
+  },
+
+  getBulkTaskById: (id: number) => {
+    return api.get(`/bulk-notifications/tasks/${id}`);
+  },
+
+  cancelBulkTask: (id: number) => {
+    return api.delete(`/bulk-notifications/tasks/${id}`);
+  },
+
+  getActiveJobs: () => {
+    return api.get("/bulk-notifications/active-jobs");
+  },
+
+  previewFilteredUsers: (filter: any) => {
+    return api.post("/bulk-notifications/filter-users", filter);
+  },
+};
+
+// API для кампаній
+export const campaignsAPI = {
+  getAll: (params?: any) => {
+    return api.get("/campaigns", { params });
+  },
+
+  create: (campaign: any) => {
+    return api.post("/campaigns", campaign);
+  },
+
+  getTypes: () => {
+    return api.get("/campaigns/types");
+  },
+
+  getStatuses: () => {
+    return api.get("/campaigns/statuses");
+  },
+
+  getById: (id: number) => {
+    return api.get(`/campaigns/${id}`);
+  },
+
+  update: (id: number, campaign: any) => {
+    return api.put(`/campaigns/${id}`, campaign);
+  },
+
+  delete: (id: number) => {
+    return api.delete(`/campaigns/${id}`);
+  },
+
+  getAnalytics: (id: number) => {
+    return api.get(`/campaigns/${id}/analytics`);
+  },
+
+  createTest: (data: any) => {
+    return api.post("/campaigns/test", data);
+  },
+
+  duplicate: (id: number) => {
+    return api.post(`/campaigns/${id}/duplicate`);
+  },
+
+  activate: (id: number) => {
+    return api.post(`/campaigns/${id}/activate`);
+  },
+
+  pause: (id: number) => {
+    return api.post(`/campaigns/${id}/pause`);
+  },
+
+  cancel: (id: number) => {
+    return api.post(`/campaigns/${id}/cancel`);
+  },
+
+  startMessages: (id: number, data: any) => {
+    return api.post(`/campaigns/${id}/messages`, data);
+  },
+};
+
+// API для запланованих завдань
+export const scheduledTasksAPI = {
+  schedulListingDeactivation: (listingId: number) => {
+    return api.get(`/scheduled-tasks/listing/${listingId}/schedule-deactivation`);
+  },
+
+  schedulePaymentReminder: (paymentId: string) => {
+    return api.get(`/scheduled-tasks/payment/${paymentId}/reminder`);
+  },
+
+  // Адміністративні функції
+  createTask: (task: any) => {
+    return api.post("/scheduled-tasks/task", task);
+  },
+
+  createBatchTasks: (tasks: any[]) => {
+    return api.post("/scheduled-tasks/batch", { tasks });
+  },
+
+  createRecurringTask: (task: any) => {
+    return api.post("/scheduled-tasks/recurring", task);
+  },
+
+  getAll: (params?: any) => {
+    return api.get("/scheduled-tasks", { params });
+  },
+
+  getById: (id: number) => {
+    return api.get(`/scheduled-tasks/${id}`);
+  },
+
+  cancelTask: (id: number) => {
+    return api.delete(`/scheduled-tasks/${id}`);
+  },
+
+  getTaskTypes: () => {
+    return api.get("/scheduled-tasks/types");
+  },
+
+  getRecurringTasks: () => {
+    return api.get("/scheduled-tasks/recurring");
+  },
+
+  cancelRecurringTask: (id: number) => {
+    return api.delete(`/scheduled-tasks/recurring/${id}`);
+  },
+};
+
+// API для управління чергами (адмін)
+export const queuesAPI = {
+  getStats: () => {
+    return api.get("/queues");
+  },
+
+  getList: () => {
+    return api.get("/queues/list");
+  },
+
+  purgeQueue: (queueName: string) => {
+    return api.delete(`/queues/${queueName}/purge`);
+  },
+
+  deleteQueue: (queueName: string) => {
+    return api.delete(`/queues/${queueName}`);
+  },
+
+  sendTestMessage: (queueName: string, data: any) => {
+    return api.post(`/queues/${queueName}/test`, data);
+  },
+
+  getMessages: (queueName: string, params?: any) => {
+    return api.get(`/queues/${queueName}/messages`, { params });
+  },
+
+  getConsumers: () => {
+    return api.get("/queues/consumers");
+  },
+};
+
+// API для перевірки працездатності
+export const healthAPI = {
+  check: () => {
+    return api.get("/health");
   },
 };
 
