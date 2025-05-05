@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Scale, MapPin, Calendar } from 'lucide-react';
-import { Listing } from '../store/catalogSlice';
+import { Listing } from '../../store/catalogSlice';
 
 interface ListingCardProps {
   listing: Listing;

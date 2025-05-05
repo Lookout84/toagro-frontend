@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { 
@@ -487,7 +487,7 @@ const CatalogPage = () => {
               <p className="text-gray-600 mb-4">Спробуйте змінити параметри пошуку або фільтри</p>
               <button 
                 onClick={() => {
-                  dispatch(resetFilters());
+                  dispatch(setFilters({}));
                   navigate('/catalog');
                 }}
                 className="text-green-600 hover:text-green-700"
