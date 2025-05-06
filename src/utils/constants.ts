@@ -64,35 +64,128 @@ export const MESSAGES = {
 
 // API шляхи
 export const API_PATHS = {
+  // Маршрути аутентифікації
   AUTH: {
-    LOGIN: "/auth/login",
     REGISTER: "/auth/register",
+    LOGIN: "/auth/login",
+    VERIFY_EMAIL: "/auth/verify/:token",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password/:token",
     PROFILE: "/auth/me",
     CHANGE_PASSWORD: "/auth/change-password",
-    FORGOT_PASSWORD: "/auth/forgot-password",
-    RESET_PASSWORD: "/auth/reset-password",
   },
+
+  // Маршрути оголошень
   LISTINGS: {
-    LIST: "/listings",
-    DETAILS: "/listings/:id",
+    BASE: "/listings",
+    DETAIL: "/listings/:id",
     USER_LISTINGS: "/listings/user/me",
   },
+
+  // Маршрути категорій
   CATEGORIES: {
-    LIST: "/categories",
-    TREE: "/categories/tree",
+    BASE: "/categories",
+    DETAIL: "/categories/:id",
     BY_SLUG: "/categories/slug/:slug",
+    TREE: "/categories/tree",
   },
+
+  // Маршрути чату
   CHAT: {
+    MESSAGES: "/chat/messages",
     CONVERSATIONS: "/chat/conversations",
-    MESSAGES: "/chat/conversations/:userId",
-    SEND: "/chat/messages",
-    READ: "/chat/conversations/:userId/read",
+    CONVERSATION_DETAIL: "/chat/conversations/:userId",
+    MARK_AS_READ: "/chat/conversations/:userId/read",
     UNREAD_COUNT: "/chat/unread",
   },
+
+  // Маршрути транзакцій
   TRANSACTIONS: {
-    LIST: "/transactions",
-    CREATE: "/transactions",
-    DETAILS: "/transactions/:id",
+    BASE: "/transactions",
+    DETAIL: "/transactions/:transactionId",
+    CALLBACK: "/transactions/callback",
+  },
+
+  // Маршрути сповіщень
+  NOTIFICATIONS: {
+    TEST_EMAIL: "/notifications/test-email",
+    TEST_SMS: "/notifications/test-sms",
+    TEST_PUSH: "/notifications/test-push",
+    SETTINGS: "/notifications/settings",
+    PREFERENCES: "/notifications/preferences",
+    HISTORY: "/notifications/history",
+    HISTORY_DETAIL: "/notifications/history/:id",
+    MARK_ALL_READ: "/notifications/history/read",
+    MARK_READ: "/notifications/history/:id/read",
+    SEND: "/notifications/send",
+    SEND_TEMPLATE: "/notifications/send-template",
+    TEMPLATES: "/notifications/templates",
+    TEMPLATE_DETAIL: "/notifications/templates/:id",
+  },
+
+  // Маршрути масових сповіщень
+  BULK_NOTIFICATIONS: {
+    EMAIL: "/bulk-notifications/email",
+    SMS: "/bulk-notifications/sms",
+    PUSH: "/bulk-notifications/push",
+    TASKS: "/bulk-notifications/tasks",
+    TASK_DETAIL: "/bulk-notifications/tasks/:id",
+    ACTIVE_JOBS: "/bulk-notifications/active-jobs",
+    FILTER_USERS: "/bulk-notifications/filter-users",
+  },
+
+  // Маршрути кампаній
+  CAMPAIGNS: {
+    BASE: "/campaigns",
+    DETAIL: "/campaigns/:id",
+    TYPES: "/campaigns/types",
+    STATUSES: "/campaigns/statuses",
+    ANALYTICS: "/campaigns/:id/analytics",
+    TEST: "/campaigns/test",
+    DUPLICATE: "/campaigns/:id/duplicate",
+    ACTIVATE: "/campaigns/:id/activate",
+    PAUSE: "/campaigns/:id/pause",
+    CANCEL: "/campaigns/:id/cancel",
+    MESSAGES: "/campaigns/:id/messages",
+  },
+
+  // Маршрути адміністратора
+  ADMIN: {
+    DASHBOARD: "/admin/dashboard",
+    USERS: "/admin/users",
+    USER_ROLE: "/admin/users/:id/role",
+    LISTINGS: "/admin/listings",
+    PAYMENTS: "/admin/payments",
+    CATEGORIES: "/admin/categories",
+  },
+
+  // Маршрути управління чергами
+  QUEUES: {
+    BASE: "/queues",
+    LIST: "/queues/list",
+    PURGE: "/queues/:queueName/purge",
+    DETAIL: "/queues/:queueName",
+    TEST: "/queues/:queueName/test",
+    MESSAGES: "/queues/:queueName/messages",
+    CONSUMERS: "/queues/consumers",
+  },
+
+  // Маршрути запланованих завдань
+  SCHEDULED_TASKS: {
+    LISTING_DEACTIVATION: "/scheduled-tasks/listing/:id/schedule-deactivation",
+    PAYMENT_REMINDER: "/scheduled-tasks/payment/:id/reminder",
+    TASK: "/scheduled-tasks/task",
+    BATCH: "/scheduled-tasks/batch",
+    RECURRING: "/scheduled-tasks/recurring",
+    BASE: "/scheduled-tasks",
+    DETAIL: "/scheduled-tasks/:id",
+    TYPES: "/scheduled-tasks/types",
+    RECURRING_DETAIL: "/scheduled-tasks/recurring/:id",
+  },
+
+  // Перевірка працездатності
+  HEALTH: {
+    CHECK: "/health",
   },
 };
 

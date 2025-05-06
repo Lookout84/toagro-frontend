@@ -4,6 +4,10 @@ import catalogReducer from "./catalogSlice";
 import listingReducer from "./listingSlice";
 import chatReducer from "./chatSlice";
 import uiReducer from "./uiSlice";
+import notificationsReducer from "./notificationsSlice";
+import transactionsReducer from "./transactionsSlice";
+import adminReducer from "./adminSlice";
+import campaignsReducer from "./campaignsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +15,10 @@ export const store = configureStore({
     listing: listingReducer,
     chat: chatReducer,
     ui: uiReducer,
+    notifications: notificationsReducer,
+    transactions: transactionsReducer,
+    admin: adminReducer,
+    campaigns: campaignsReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

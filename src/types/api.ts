@@ -42,6 +42,15 @@ export interface RegisterRequest {
   phoneNumber?: string;
 }
 
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -98,6 +107,13 @@ export interface Category {
   };
 }
 
+export interface CategoryRequest {
+  name: string;
+  description?: string;
+  parentId?: number;
+  image?: string | File;
+}
+
 // Типи для чату
 export interface Conversation {
   userId: number;
@@ -147,4 +163,161 @@ export interface CreateTransactionRequest {
   description?: string;
   listingId?: number;
   paymentMethod: string;
+}
+
+// Типи для сповіщень
+export interface NotificationSettings {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+  inApp: boolean;
+}
+
+export interface NotificationPreferences {
+  listingMessages: boolean;
+  listingUpdates: boolean;
+  promotions: boolean;
+  systemAnnouncements: boolean;
+  accountActivity: boolean;
+}
+
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  data?: Record<string, any>;
+}
+
+// Типи для адміністративних функцій
+export interface AdminDashboardStats {
+  totalUsers: number;
+  newUsersToday: number;
+  totalListings: number;
+  newListingsToday: number;
+  totalTransactions: number;
+  totalRevenue: number;
+  revenueToday: number;
+  userGrowth: {
+    labels: string[];
+    data: number[];
+  };
+  listingGrowth: {
+    labels: string[];
+    data: number[];
+  };
+  revenueGrowth: {
+    labels: string[];
+    data: number[];
+  };
+}
+
+// Типи для кампаній
+export interface Campaign {
+  id: number;
+  name: string;
+  description?: string;
+  type: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  targetAudience?: Record<string, any>;
+  content: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+}
+
+export interface CampaignAnalytics {
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  unsubscribed: number;
+  openRate: number;
+  clickRate: number;
+  conversionRate: number;
+  timeline: {
+    date: string;
+    opens: number;
+    clicks: number;
+  }[];
+}
+
+// Типи для запланованих завдань
+export interface ScheduledTask {
+  id: number;
+  type: string;
+  data: Record<string, any>;
+  status: string;
+  scheduledAt: string;
+  executedAt?: string;
+  result?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringTask {
+  id: number;
+  type: string;
+  data: Record<string, any>;
+  status: string;
+  schedule: string; // CRON формат
+  lastExecutedAt?: string;
+  nextExecutionAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Типи для черг повідомлень
+export interface QueueStats {
+  name: string;
+  messagesCount: number;
+  consumersCount: number;
+  messagesPerSecond: number;
+  status: string;
+}
+
+export interface QueueMessage {
+  id: string;
+  content: any;
+  createdAt: string;
+  headers: Record<string, any>;
+}
+
+export interface QueueConsumer {
+  id: string;
+  queue: string;
+  tag: string;
+  status: string;
+  createdAt: string;
+}
+
+// Типи для перевірки здоров'я системи
+export interface HealthCheck {
+  status: string;
+  timestamp: string;
+  version: string;
+  uptime: number;
+  services: {
+    database: {
+      status: string;
+      latency: number;
+    };
+    redis: {
+      status: string;
+      latency: number;
+    };
+    rabbitmq: {
+      status: string;
+      latency: number;
+    };
+    storage: {
+      status: string;
+      latency: number;
+    };
+  };
 }
