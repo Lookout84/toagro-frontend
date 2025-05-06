@@ -179,33 +179,7 @@ const notificationsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-    // Обробка updateNotificationSettings
-      .addCase(updateNotificationSettings.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(updateNotificationSettings.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.settings = action.payload;
-      })
-      .addCase(updateNotificationSettings.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
 
-    // Обробка fetchNotificationPreferences
-      .addCase(fetchNotificationPreferences.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchNotificationPreferences.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.preferences = action.payload;
-      })
-      .addCase(fetchNotificationPreferences.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
 
     // Обробка updateNotificationPreferences
       .addCase(updateNotificationPreferences.pending, (state) => {
@@ -252,8 +226,9 @@ const notificationsSlice = createSlice({
           (notification) => notification.id === action.payload.id
         );
         if (index !== -1) {
-          if (!state.notifications[index].isRead) {
-            state.notifications[index].isRead = true;
+          const notification = state.notifications[index];
+          if (notification && !notification.isRead) {
+            notification.isRead = true;
             if (state.unreadCount > 0) {
               state.unreadCount -= 1;
             }
@@ -277,7 +252,8 @@ const notificationsSlice = createSlice({
           (notification) => notification.id === action.payload
         );
         if (index !== -1) {
-          if (!state.notifications[index].isRead) {
+          const notification = state.notifications[index];
+          if (notification && !notification.isRead) {
             if (state.unreadCount > 0) {
               state.unreadCount -= 1;
             }
@@ -300,32 +276,4 @@ export const {
   addNotification 
 } = notificationsSlice.actions;
 
-export default notificationsSlice.reducer;ificationSettings = createAsyncThunk(
-  "notifications/updateSettings",
-  async (settings: NotificationSettings, { rejectWithValue }) => {
-    try {
-      const response = await notificationsAPI.updateSettings(settings);
-      return response.data.data.settings;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка оновлення налаштувань сповіщень"
-      );
-    }
-  }
-);
-
-export const fetchNotificationPreferences = createAsyncThunk(
-  "notifications/fetchPreferences",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await notificationsAPI.getPreferences();
-      return response.data.data.preferences;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження налаштувань категорій сповіщень"
-      );
-    }
-  }
-);
-
-export const updateNot
+export default notificationsSlice.reducer;

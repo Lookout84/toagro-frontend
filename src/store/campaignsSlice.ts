@@ -335,15 +335,7 @@ const campaignsSlice = createSlice({
 
 export const { resetCampaignsState, setCampaignFilter } = campaignsSlice.actions;
 
-export default campaignsSlice.reducer; = await campaignsAPI.getById(id);
-      return response.data.data.campaign;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження кампанії"
-      );
-    }
-  }
-);
+export default campaignsSlice.reducer;
 
 export const fetchCampaignAnalytics = createAsyncThunk(
   "campaigns/fetchCampaignAnalytics",
