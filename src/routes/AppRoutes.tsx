@@ -18,7 +18,7 @@ const LoginPage = lazy(() => import("../pages/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/RegisterPage"));
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmailPage"));
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
-const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
+const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage")));
 
 // Сторінки профілю користувача
 const ProfilePage = lazy(() => import("../pages/ProfilePage"));
