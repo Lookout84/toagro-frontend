@@ -321,3 +321,15 @@ export interface HealthCheck {
     };
   };
 }
+
+export interface Listing {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  status: string;
+  images: string[];
+  createdAt: string;
+  updatedAt: string;
+  // Додайте інші поля, які є в вашому API
+}
