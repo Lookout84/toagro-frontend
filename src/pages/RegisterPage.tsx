@@ -72,7 +72,7 @@ const RegisterPage = () => {
 
     try {
       // Видаляємо поле confirmPassword перед відправкою
-      const { confirmPassword, ...registerData } = formData;
+      const { confirmPassword: _confirmPassword, ...registerData } = formData;
 
       await register(registerData);
       navigate("/");
@@ -100,7 +100,7 @@ const RegisterPage = () => {
                 htmlFor="name"
                 className="block text-gray-700 font-medium mb-2"
               >
-                Ім'я та прізвище
+                Ім&apos;я та прізвище
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -158,7 +158,7 @@ const RegisterPage = () => {
                 htmlFor="phoneNumber"
                 className="block text-gray-700 font-medium mb-2"
               >
-                Номер телефону (необов'язково)
+                Номер телефону (необов&apos;язково)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

@@ -9,8 +9,6 @@ import {
   TrendingUp,
   Bell,
   Calendar,
-  Eye,
-  CheckCircle,
   Tag,
   Settings,
   Clock,

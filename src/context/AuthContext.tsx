@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   ReactNode,
@@ -61,9 +60,6 @@ const AuthContext = createContext<AuthContextProps>({
   updateUserProfile: async () => {},
 });
 
-// Кастомний хук для використання контексту
-export const useAuth = () => useContext(AuthContext);
-
 // Провайдер контексту
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -122,10 +118,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(userData);
 
       toast.success("Вхід виконано успішно!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login failed:", err);
       const errorMessage =
-        err.response?.data?.message ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         "Помилка входу. Перевірте логін та пароль.";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -157,10 +153,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       toast.success(
         "Реєстрація успішна! На вашу пошту надіслано лист для підтвердження.",
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Registration failed:", err);
       const errorMessage =
-        err.response?.data?.message || "Помилка реєстрації. Спробуйте ще раз.";
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
+        "Помилка реєстрації. Спробуйте ще раз.";
       setError(errorMessage);
       toast.error(errorMessage);
       throw err;
@@ -196,11 +193,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Оновлюємо інформацію про користувача
       setUser(updatedUser);
 
-      toast.success("Профіль успішно оновлено!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Profile update failed:", err);
       const errorMessage =
-        err.response?.data?.message || "Помилка оновлення профілю.";
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
+        "Помилка оновлення профілю.";
       setError(errorMessage);
       toast.error(errorMessage);
       throw err;

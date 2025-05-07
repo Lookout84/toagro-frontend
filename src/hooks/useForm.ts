@@ -1,7 +1,7 @@
 import { useState, useCallback, ChangeEvent, FormEvent } from "react";
 
 type ValidationRules<T> = Partial<
-  Record<keyof T, (value: any, formValues: T) => string | null>
+  Record<keyof T, (value: T[keyof T], formValues: T) => string | null>
 >;
 
 interface UseFormOptions<T> {
@@ -13,7 +13,7 @@ interface UseFormOptions<T> {
 /**
  * Хук для управління станом форми та валідацією
  */
-function useForm<T extends Record<string, any>>({
+function useForm<T extends Record<string, unknown>>({
   initialValues,
   validationRules = {},
   onSubmit,
@@ -33,7 +33,7 @@ function useForm<T extends Record<string, any>>({
 
   // Валідація окремого поля
   const validateField = useCallback(
-    (name: keyof T, value: any) => {
+    (name: keyof T, value: T[keyof T]) => {
       const validateRule = validationRules[name];
       if (validateRule) {
         const errorMessage = validateRule(value, values);
@@ -95,7 +95,7 @@ function useForm<T extends Record<string, any>>({
       }));
 
       // Валідація поля при зміні
-      const error = validateField(name as keyof T, fieldValue);
+      const error = validateField(name as keyof T, fieldValue as T[keyof T]);
       setErrors((prev) => ({
         ...prev,
         [name]: error,
@@ -106,7 +106,7 @@ function useForm<T extends Record<string, any>>({
 
   // Встановлення значення поля програмно
   const setFieldValue = useCallback(
-    (name: keyof T, value: any) => {
+    (name: keyof T, value: T[keyof T]) => {
       setValues((prev) => ({
         ...prev,
         [name]: value,

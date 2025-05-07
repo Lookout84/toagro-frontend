@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   useNavigate,
   Routes,
@@ -6,7 +6,7 @@ import {
   Link,
   useLocation,
 } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import AuthContext from "../context/AuthContext";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchUserListings, deleteListing } from "../store/listingSlice";
 import {
@@ -26,7 +26,7 @@ import ListingCard from "../components/ui/ListingCard";
 
 // Компонент особистої інформації
 const ProfileInfo = () => {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -85,7 +85,7 @@ const ProfileInfo = () => {
                   htmlFor="name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Ім'я та прізвище
+                  Ім&apos;я та прізвище
                 </label>
                 <input
                   type="text"
@@ -536,7 +536,7 @@ const CompareListings = () => {
 
 // Основний компонент сторінки профілю
 const ProfilePage = () => {
-  const { logout } = useAuth();
+  const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 

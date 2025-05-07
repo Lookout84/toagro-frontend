@@ -1,4 +1,8 @@
 import type { Config } from "tailwindcss";
+import tailwindForms from "@tailwindcss/forms";
+import tailwindTypography from "@tailwindcss/typography";
+import tailwindAspectRatio from "@tailwindcss/aspect-ratio";
+import tailwindContainerQueries from "@tailwindcss/container-queries";
 
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -72,15 +76,14 @@ export default {
       },
       screens: {
         xs: "480px",
-        "3xl": "1600px",
       },
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),
-    require("@tailwindcss/typography"),
-    require("@tailwindcss/aspect-ratio"),
-    require("@tailwindcss/container-queries"),
+    tailwindForms,
+    tailwindTypography,
+    tailwindAspectRatio,
+    tailwindContainerQueries,
   ],
   corePlugins: {
     aspectRatio: true,

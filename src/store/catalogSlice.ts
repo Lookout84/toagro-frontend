@@ -46,6 +46,8 @@ interface FilterParams {
   limit?: number;
   sortBy?: "createdAt" | "price" | "views";
   sortOrder?: "asc" | "desc";
+  exclude?: number;
+  [key: string]: unknown;
 }
 
 interface ListingsResponse {
@@ -103,10 +105,11 @@ export const fetchCategories = createAsyncThunk(
     try {
       const response = await categoriesAPI.getAll();
       return response.data.data.categories;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження категорій",
-      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Помилка завантаження категорій";
+      return rejectWithValue(errorMessage);
     }
   },
 );
@@ -117,11 +120,15 @@ export const fetchCategoryTree = createAsyncThunk(
     try {
       const response = await categoriesAPI.getTree();
       return response.data.data.categoryTree;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message ||
-          "Помилка завантаження дерева категорій",
-      );
+    } catch (error: unknown) {
+      const errorMessage = 
+        error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response && 
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data && 
+        typeof error.response.data.message === 'string' 
+          ? error.response.data.message 
+          : "Помилка завантаження дерева категорій";
+      return rejectWithValue(errorMessage);
     }
   },
 );
@@ -132,10 +139,14 @@ export const fetchCategoryBySlug = createAsyncThunk(
     try {
       const response = await categoriesAPI.getBySlug(slug);
       return response.data.data.category;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Категорію не знайдено",
-      );
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error &&
+          error.response && typeof error.response === 'object' && 'data' in error.response) {
+        return rejectWithValue(
+          (error.response.data as { message?: string })?.message || "Категорію не знайдено",
+        );
+      }
+      return rejectWithValue("Категорію не знайдено");
     }
   },
 );
@@ -146,10 +157,13 @@ export const fetchListings = createAsyncThunk(
     try {
       const response = await listingsAPI.getAll(params);
       return response.data.data as ListingsResponse;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження оголошень",
-      );
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'data' in error.response && 
+          error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        return rejectWithValue(error.response.data.message || "Помилка завантаження оголошень");
+      }
+      return rejectWithValue("Помилка завантаження оголошень");
     }
   },
 );

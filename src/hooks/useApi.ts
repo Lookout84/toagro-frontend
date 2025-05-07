@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { AxiosError, AxiosResponse } from "axios";
 
-interface ApiHookResult<T, E = any> {
+interface ApiHookResult<T, A extends unknown[] = unknown[], E = unknown> {
   data: T | null;
   loading: boolean;
   error: E | null;
-  fetchData: (...args: any[]) => Promise<T | null>;
+  fetchData: (...args: A) => Promise<T | null>;
   reset: () => void;
 }
 
@@ -14,9 +14,9 @@ interface ApiHookResult<T, E = any> {
  * @param apiFunction - функція API, яку треба викликати
  * @returns об'єкт з даними, станом завантаження, помилкою та функцією виклику API
  */
-function useApi<T, A extends any[] = any[], E = any>(
+function useApi<T, A extends unknown[] = unknown[], E = unknown>(
   apiFunction: (...args: A) => Promise<AxiosResponse<T>>,
-): ApiHookResult<T, E> {
+): ApiHookResult<T, A, E> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<E | null>(null);

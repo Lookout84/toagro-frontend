@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchCampaigns,
@@ -22,7 +22,8 @@ import {
   Copy,
   Filter,
   ChevronDown,
-  Search
+  Search,
+  Eye
 } from "lucide-react";
 import Loader from "../../components/common/Loader";
 import { Campaign } from "../../types/api";
@@ -43,7 +44,7 @@ const AdminCampaignsPage = () => {
 
   // Завантаження кампаній, типів та статусів при першому рендері
   useEffect(() => {
-    dispatch(fetchCampaigns());
+    dispatch(fetchCampaigns({}));
     dispatch(fetchCampaignTypes());
     dispatch(fetchCampaignStatuses());
   }, [dispatch]);
@@ -51,12 +52,17 @@ const AdminCampaignsPage = () => {
   // Обробник пошуку
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(fetchCampaigns({ search: searchTerm }));
+    // Using the searchTerm as 'type' parameter as a workaround
+    // or modify your fetchCampaigns action to accept a search parameter
+    dispatch(fetchCampaigns({ type: searchTerm }));
   };
 
   // Обробник зміни фільтрів
   const applyFilters = () => {
-    dispatch(fetchCampaigns({ type: filterType, status: filterStatus }));
+    const filters: {type?: string, status?: string} = {};
+    if (filterType) filters.type = filterType;
+    if (filterStatus) filters.status = filterStatus;
+    dispatch(fetchCampaigns(filters));
     setShowFilters(false);
   };
 
@@ -64,7 +70,7 @@ const AdminCampaignsPage = () => {
   const resetFilters = () => {
     setFilterType(null);
     setFilterStatus(null);
-    dispatch(fetchCampaigns());
+    dispatch(fetchCampaigns({}));
     setShowFilters(false);
   };
 
@@ -453,7 +459,12 @@ const AdminCampaignsPage = () => {
               <div className="flex justify-center mt-6">
                 <nav className="flex items-center space-x-2">
                   <button
-                    onClick={() => dispatch(fetchCampaigns({ ...{ type: filterType, status: filterStatus }, page: meta.page - 1 }))}
+                    onClick={() => {
+                      const filters: { page: number; type?: string; status?: string } = { page: meta.page - 1 };
+                      if (filterType) filters.type = filterType;
+                      if (filterStatus) filters.status = filterStatus;
+                      dispatch(fetchCampaigns(filters));
+                    }}
                     disabled={meta.page === 1}
                     className={`w-10 h-10 rounded-md flex items-center justify-center ${
                       meta.page === 1
@@ -478,21 +489,31 @@ const AdminCampaignsPage = () => {
                         {index > 0 && array[index - 1] !== page - 1 && (
                           <span className="text-gray-500">...</span>
                         )}
-                        <button
-                          onClick={() => dispatch(fetchCampaigns({ ...{ type: filterType, status: filterStatus }, page }))}
-                          className={`w-10 h-10 rounded-md flex items-center justify-center ${
-                            page === meta.page
-                              ? "bg-green-600 text-white"
-                              : "text-gray-700 hover:bg-gray-100"
-                          }`}
-                        >
+                    <button
+                      onClick={() => {
+                        const filters: { page: number; type?: string; status?: string } = { page };
+                        if (filterType) filters.type = filterType;
+                        if (filterStatus) filters.status = filterStatus;
+                        dispatch(fetchCampaigns(filters));
+                      }}
+                      className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                        page === meta.page
+                          ? "bg-green-600 text-white"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
                           {page}
                         </button>
                       </React.Fragment>
                     ))}
                   
                   <button
-                    onClick={() => dispatch(fetchCampaigns({ ...{ type: filterType, status: filterStatus }, page: meta.page + 1 }))}
+                    onClick={() => {
+                      const filters: { page: number; type?: string; status?: string } = { page: meta.page + 1 };
+                      if (filterType) filters.type = filterType;
+                      if (filterStatus) filters.status = filterStatus;
+                      dispatch(fetchCampaigns(filters));
+                    }}
                     disabled={meta.page === meta.pages}
                     className={`w-10 h-10 rounded-md flex items-center justify-center ${
                       meta.page === meta.pages

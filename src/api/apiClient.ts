@@ -126,11 +126,11 @@ export const categoriesAPI = {
   },
 
   // Адміністративні функції
-  create: (data: any) => {
+  create: (data: { name: string; parentId?: number }) => {
     return api.post("/categories", data);
   },
 
-  update: (id: number, data: any) => {
+  update: (id: number, data: { name?: string; parentId?: number }) => {
     return api.put(`/categories/${id}`, data);
   },
 
@@ -145,7 +145,7 @@ export const chatAPI = {
     return api.get("/chat/conversations");
   },
 
-  getMessages: (userId: number, params?: any) => {
+  getMessages: (userId: number, params?: Record<string, unknown>) => {
     return api.get(`/chat/conversations/${userId}`, { params });
   },
 
@@ -168,11 +168,11 @@ export const chatAPI = {
 
 // API для транзакцій/оплат
 export const transactionsAPI = {
-  create: (formData: any) => {
+  create: (formData: { amount: number; description: string; userId: number }) => {
     return api.post("/transactions", formData);
   },
 
-  getAll: (params?: any) => {
+  getAll: (params?: Record<string, unknown>) => {
     return api.get("/transactions", { params });
   },
 
@@ -188,7 +188,7 @@ export const notificationsAPI = {
     return api.get("/notifications/settings");
   },
 
-  updateSettings: (settings: any) => {
+  updateSettings: (settings: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }) => {
     return api.put("/notifications/settings", settings);
   },
 
@@ -196,12 +196,12 @@ export const notificationsAPI = {
     return api.get("/notifications/preferences");
   },
 
-  updatePreferences: (preferences: any) => {
+  updatePreferences: (preferences: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }) => {
     return api.put("/notifications/preferences", preferences);
   },
 
   // Історія сповіщень
-  getHistory: (params?: any) => {
+  getHistory: (params?: Record<string, unknown>) => {
     return api.get("/notifications/history", { params });
   },
 
@@ -241,7 +241,7 @@ export const adminAPI = {
     return api.get("/admin/dashboard");
   },
 
-  getUsers: (params?: any) => {
+  getUsers: (params?: Record<string, unknown>) => {
     return api.get("/admin/users", { params });
   },
 
@@ -249,11 +249,11 @@ export const adminAPI = {
     return api.put(`/admin/users/${userId}/role`, { role });
   },
 
-  getListings: (params?: any) => {
+  getListings: (params?: Record<string, unknown>) => {
     return api.get("/admin/listings", { params });
   },
 
-  getPayments: (params?: any) => {
+  getPayments: (params?: Record<string, unknown>) => {
     return api.get("/admin/payments", { params });
   },
 
@@ -270,11 +270,11 @@ export const adminAPI = {
     return api.get(`/notifications/templates/${id}`);
   },
 
-  createNotificationTemplate: (template: any) => {
+  createNotificationTemplate: (template: { title: string; body: string; type: string }) => {
     return api.post("/notifications/templates", template);
   },
 
-  updateNotificationTemplate: (id: number, template: any) => {
+  updateNotificationTemplate: (id: number, template: { title: string; body: string; type: string }) => {
     return api.put(`/notifications/templates/${id}`, template);
   },
 
@@ -283,15 +283,15 @@ export const adminAPI = {
   },
 
   // API для масових розсилок
-  sendBulkEmails: (data: any) => {
+  sendBulkEmails: (data: { subject: string; body: string; recipients: string[] }) => {
     return api.post("/bulk-notifications/email", data);
   },
 
-  sendBulkSms: (data: any) => {
+  sendBulkSms: (data: { message: string; recipients: string[] }) => {
     return api.post("/bulk-notifications/sms", data);
   },
 
-  sendBulkPush: (data: any) => {
+  sendBulkPush: (data: { title: string; body: string; recipients: string[] }) => {
     return api.post("/bulk-notifications/push", data);
   },
 
@@ -311,18 +311,18 @@ export const adminAPI = {
     return api.get("/bulk-notifications/active-jobs");
   },
 
-  previewFilteredUsers: (filter: any) => {
+  previewFilteredUsers: (filter: { [key: string]: unknown }) => {
     return api.post("/bulk-notifications/filter-users", filter);
   },
 };
 
 // API для кампаній
 export const campaignsAPI = {
-  getAll: (params?: any) => {
+  getAll: (params?: Record<string, unknown>) => {
     return api.get("/campaigns", { params });
   },
 
-  create: (campaign: any) => {
+  create: (campaign: { name: string; description: string; startDate: string; endDate: string; [key: string]: unknown }) => {
     return api.post("/campaigns", campaign);
   },
 
@@ -338,7 +338,7 @@ export const campaignsAPI = {
     return api.get(`/campaigns/${id}`);
   },
 
-  update: (id: number, campaign: any) => {
+  update: (id: number, campaign: { name?: string; description?: string; startDate?: string; endDate?: string; [key: string]: unknown }) => {
     return api.put(`/campaigns/${id}`, campaign);
   },
 
@@ -350,7 +350,7 @@ export const campaignsAPI = {
     return api.get(`/campaigns/${id}/analytics`);
   },
 
-  createTest: (data: any) => {
+  createTest: (data: { [key: string]: unknown }) => {
     return api.post("/campaigns/test", data);
   },
 
@@ -370,7 +370,7 @@ export const campaignsAPI = {
     return api.post(`/campaigns/${id}/cancel`);
   },
 
-  startMessages: (id: number, data: any) => {
+  startMessages: (id: number, data: Record<string, unknown>) => {
     return api.post(`/campaigns/${id}/messages`, data);
   },
 };
@@ -386,19 +386,19 @@ export const scheduledTasksAPI = {
   },
 
   // Адміністративні функції
-  createTask: (task: any) => {
+  createTask: (task: { name: string; schedule: string; data: Record<string, unknown> }) => {
     return api.post("/scheduled-tasks/task", task);
   },
 
-  createBatchTasks: (tasks: any[]) => {
+  createBatchTasks: (tasks: { name: string; schedule: string; data: Record<string, unknown> }[]) => {
     return api.post("/scheduled-tasks/batch", { tasks });
   },
 
-  createRecurringTask: (task: any) => {
+  createRecurringTask: (task: { name: string; schedule: string; data: Record<string, unknown> }) => {
     return api.post("/scheduled-tasks/recurring", task);
   },
 
-  getAll: (params?: any) => {
+  getAll: (params?: Record<string, unknown>) => {
     return api.get("/scheduled-tasks", { params });
   },
 
@@ -441,11 +441,11 @@ export const queuesAPI = {
     return api.delete(`/queues/${queueName}`);
   },
 
-  sendTestMessage: (queueName: string, data: any) => {
+  sendTestMessage: (queueName: string, data: Record<string, unknown>) => {
     return api.post(`/queues/${queueName}/test`, data);
   },
 
-  getMessages: (queueName: string, params?: any) => {
+  getMessages: (queueName: string, params?: Record<string, unknown>) => {
     return api.get(`/queues/${queueName}/messages`, { params });
   },
 

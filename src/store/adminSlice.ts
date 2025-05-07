@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { adminAPI } from "../api/apiClient";
 import { User, Listing, Transaction, AdminDashboardStats } from "../types/api";
 
@@ -63,10 +63,12 @@ export const fetchDashboardStats = createAsyncThunk(
     try {
       const response = await adminAPI.getDashboardStats();
       return response.data.data.stats;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження статистики дашборду"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка завантаження статистики дашборду";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -77,10 +79,12 @@ export const fetchAdminUsers = createAsyncThunk(
     try {
       const response = await adminAPI.getUsers(params);
       return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження користувачів"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка завантаження користувачів";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -91,10 +95,12 @@ export const updateUserRole = createAsyncThunk(
     try {
       const response = await adminAPI.updateUserRole(userId, role);
       return response.data.data.user;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка оновлення ролі користувача"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка оновлення ролі користувача";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -105,10 +111,12 @@ export const fetchAdminListings = createAsyncThunk(
     try {
       const response = await adminAPI.getListings(params);
       return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження оголошень"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка завантаження оголошень";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -119,10 +127,12 @@ export const fetchAdminPayments = createAsyncThunk(
     try {
       const response = await adminAPI.getPayments(params);
       return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження платежів"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : "Помилка завантаження платежів";
+      return rejectWithValue(errorMessage);
     }
   }
 );
