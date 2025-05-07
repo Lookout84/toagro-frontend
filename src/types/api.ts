@@ -179,6 +179,9 @@ export interface NotificationPreferences {
   promotions: boolean;
   systemAnnouncements: boolean;
   accountActivity: boolean;
+  emailNotifications?: boolean;
+  smsNotifications?: boolean;
+  pushNotifications?: boolean;
 }
 
 export interface Notification {
@@ -188,7 +191,7 @@ export interface Notification {
   content: string;
   isRead: boolean;
   createdAt: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 // Типи для адміністративних функцій
@@ -223,8 +226,8 @@ export interface Campaign {
   status: string;
   startDate?: string;
   endDate?: string;
-  targetAudience?: Record<string, any>;
-  content: Record<string, any>;
+  targetAudience?: Record<string, unknown>;
+  content: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   createdBy: number;
@@ -251,11 +254,11 @@ export interface CampaignAnalytics {
 export interface ScheduledTask {
   id: number;
   type: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   status: string;
   scheduledAt: string;
   executedAt?: string;
-  result?: Record<string, any>;
+  result?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -263,7 +266,7 @@ export interface ScheduledTask {
 export interface RecurringTask {
   id: number;
   type: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   status: string;
   schedule: string; // CRON формат
   lastExecutedAt?: string;
@@ -283,9 +286,9 @@ export interface QueueStats {
 
 export interface QueueMessage {
   id: string;
-  content: any;
+  content: unknown;
   createdAt: string;
-  headers: Record<string, any>;
+  headers: Record<string, unknown>;
 }
 
 export interface QueueConsumer {

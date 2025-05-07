@@ -6,6 +6,7 @@ import {
 } from "react";
 import { toast } from "react-toastify";
 import api from "../api/apiClient";
+import { useContext } from "react";
 
 // Інтерфейси для типізації
 export interface User {
@@ -222,6 +223,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   return (
     <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export default AuthContext;

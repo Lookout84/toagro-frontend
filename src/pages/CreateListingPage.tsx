@@ -131,7 +131,7 @@ const CreateListingPage = () => {
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "Введіть опис оголошення";
+      newErrors.description = "Введіть опис оголошення (не менше 20 символів)";
     }
 
     if (!formData.price.trim()) {

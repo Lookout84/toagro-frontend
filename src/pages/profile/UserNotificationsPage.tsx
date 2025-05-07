@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchNotifications,
@@ -26,7 +26,7 @@ const UserNotificationsPage = () => {
 
   // Завантаження сповіщень, налаштувань та уподобань при першому рендері
   useEffect(() => {
-    dispatch(fetchNotifications());
+    dispatch(fetchNotifications({ page: 1 }));
     dispatch(fetchNotificationSettings());
     dispatch(fetchNotificationPreferences());
   }, [dispatch]);

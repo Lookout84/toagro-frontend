@@ -8,14 +8,17 @@ import {
   Edit2,
   Trash2,
   AlertTriangle,
-  ExternalLink,
   RefreshCw,
   Eye,
 } from "lucide-react";
 import Loader from "../../components/common/Loader";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import type { Listing as CatalogListing } from "../../store/catalogSlice";
+import type { Listing as BaseCatalogListing } from "../../store/catalogSlice";
+
+export type CatalogListing = BaseCatalogListing & {
+  status: string; // Added 'status' property
+};
 import Modal from "../../components/common/Modal";
 
 export type Listing = {
@@ -29,7 +32,10 @@ export type Listing = {
 
 const UserListingsPage = () => {
   const dispatch = useAppDispatch();
-  const { userListings, isLoading } = useAppSelector((state) => state.listing);
+  const { userListings, isLoading } = useAppSelector((state) => ({
+    userListings: state.listing.userListings as CatalogListing[],
+    isLoading: state.listing.isLoading,
+  }));
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);

@@ -79,8 +79,12 @@ const UserPasswordChangePage = () => {
         setSuccessMessage("");
         navigate("/profile");
       }, 3000);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Помилка зміни паролю";
+    } catch (error: unknown) {
+      let errorMessage = "Помилка зміни паролю";
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const err = error as { response?: { data?: { message?: string } } };
+        errorMessage = err.response?.data?.message || errorMessage;
+      }
       setErrors({
         ...errors,
         currentPassword: errorMessage,
@@ -132,7 +136,7 @@ const UserPasswordChangePage = () => {
                 type={showCurrentPassword ? "text" : "password"}
                 value={formData.currentPassword}
                 onChange={handleInputChange}
-                error={errors.currentPassword}
+                error={errors.currentPassword || ""}
                 leftIcon={<Lock size={18} className="text-gray-400" />}
                 required
               />
@@ -158,7 +162,7 @@ const UserPasswordChangePage = () => {
                 type={showNewPassword ? "text" : "password"}
                 value={formData.newPassword}
                 onChange={handleInputChange}
-                error={errors.newPassword}
+                error={errors.newPassword || ""}
                 leftIcon={<Lock size={18} className="text-gray-400" />}
                 helper="Мінімум 6 символів"
                 required
@@ -185,7 +189,7 @@ const UserPasswordChangePage = () => {
                 type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmNewPassword}
                 onChange={handleInputChange}
-                error={errors.confirmNewPassword}
+                error={errors.confirmNewPassword || ""}
                 leftIcon={<Lock size={18} className="text-gray-400" />}
                 required
               />
@@ -228,10 +232,10 @@ const UserPasswordChangePage = () => {
             Рекомендації щодо безпеки пароля:
           </h3>
           <ul className="list-disc pl-10 text-sm text-gray-600 space-y-1">
-            <li>Використовуйте мінімум 8 символів (обов'язковий мінімум - 6)</li>
+            <li>Використовуйте мінімум 8 символів (обов&#39;язковий мінімум - 6)</li>
             <li>Поєднуйте великі та малі літери</li>
             <li>Додавайте цифри та спеціальні символи (!, @, #, $ тощо)</li>
-            <li>Не використовуйте особисту інформацію (дата народження, ім'я)</li>
+            <li>Не використовуйте особисту інформацію (дата народження, ім&#39;я)</li>
             <li>Не використовуйте однаковий пароль для різних сервісів</li>
           </ul>
         </div>

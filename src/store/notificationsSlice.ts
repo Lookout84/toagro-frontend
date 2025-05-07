@@ -39,10 +39,15 @@ export const fetchNotifications = createAsyncThunk(
     try {
       const response = await notificationsAPI.getHistory(params);
       return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження сповіщень"
-      );
+    } catch (error: unknown) {
+      const errorMessage = 
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка завантаження сповіщень";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -53,24 +58,77 @@ export const fetchNotificationSettings = createAsyncThunk(
     try {
       const response = await notificationsAPI.getSettings();
       return response.data.data.settings;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження налаштувань сповіщень"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка завантаження налаштувань сповіщень";
+      return rejectWithValue(errorMessage);
     }
   }
 );
-
+export const updateNotificationSettings = createAsyncThunk(
+  "notifications/updateSettings",
+  async (settings: NotificationSettings, { rejectWithValue }) => {
+    try {
+      const { email, sms, push } = settings;
+      const apiSettings = {
+        emailNotifications: email,
+        smsNotifications: sms,
+        pushNotifications: push,
+      };
+      const response = await notificationsAPI.updateSettings(apiSettings);
+      return response.data.data.settings;
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка оновлення налаштувань сповіщень";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+  
 export const updateNotificationPreferences = createAsyncThunk(
   "notifications/updatePreferences",
   async (preferences: NotificationPreferences, { rejectWithValue }) => {
     try {
       const response = await notificationsAPI.updatePreferences(preferences);
       return response.data.data.preferences;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка оновлення налаштувань категорій сповіщень"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка оновлення налаштувань категорій сповіщень";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const fetchNotificationPreferences = createAsyncThunk(
+  "notifications/fetchPreferences",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await notificationsAPI.getPreferences();
+      return response.data.data.preferences;
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка завантаження налаштувань категорій сповіщень";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -81,10 +139,15 @@ export const markAllNotificationsAsRead = createAsyncThunk(
     try {
       const response = await notificationsAPI.markAllAsRead();
       return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка позначення всіх сповіщень як прочитаних"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка позначення всіх сповіщень як прочитаних";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -95,10 +158,14 @@ export const markNotificationAsRead = createAsyncThunk(
     try {
       const response = await notificationsAPI.markAsRead(id);
       return { id, ...response.data.data };
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка позначення сповіщення як прочитаного"
-      );
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка позначення сповіщення як прочитаного";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -109,10 +176,14 @@ export const deleteNotification = createAsyncThunk(
     try {
       await notificationsAPI.deleteNotification(id);
       return id;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка видалення сповіщення"
-      );
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error &&
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : "Помилка видалення сповіщення";
+      return rejectWithValue(errorMessage);
     }
   }
 );
