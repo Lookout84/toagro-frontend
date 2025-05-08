@@ -28,6 +28,7 @@ export const fetchListingById = createAsyncThunk(
       const response = await listingsAPI.getById(id);
       return response.data.data.listing;
     } catch (error: any) {
+      // Обробка помилки  
       return rejectWithValue(
         error.response?.data?.message || "Помилка завантаження оголошення",
       );
