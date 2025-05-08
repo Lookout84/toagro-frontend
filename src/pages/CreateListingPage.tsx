@@ -10,6 +10,7 @@ interface FormData {
   description: string;
   price: string;
   categoryId: string;
+  categoryName: string;
   location: string;
   images: File[];
 }
@@ -28,7 +29,7 @@ const CreateListingPage = () => {
   const navigate = useNavigate();
 
   const { categories, status: categoriesStatus } = useAppSelector(
-    (state) => state.catalog,
+    (state) => state.catalog
   );
   const { isLoading } = useAppSelector((state) => state.listing);
 
@@ -37,6 +38,7 @@ const CreateListingPage = () => {
     description: "",
     price: "",
     categoryId: "",
+    categoryName: "",
     location: "",
     images: [],
   });
@@ -45,26 +47,34 @@ const CreateListingPage = () => {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Завантаження категорій при першому рендері
   useEffect(() => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
   }, [dispatch, categories.length]);
 
-  // Обробник зміни полів форми
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
 
-    // Очищення помилки при зміні поля
+    // Автоматично встановлюємо categoryName при виборі categoryId
+    if (name === "categoryId") {
+      const selectedCategory = categories.find((cat) => cat.id === Number(value));
+      setFormData({
+        ...formData,
+        [name]: value,
+        categoryName: selectedCategory ? selectedCategory.name : "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+
     if (errors[name as keyof FormErrors]) {
       setErrors({
         ...errors,
@@ -73,7 +83,6 @@ const CreateListingPage = () => {
     }
   };
 
-  // Обробник завантаження зображень
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -81,7 +90,6 @@ const CreateListingPage = () => {
     handleFiles(Array.from(files));
   };
 
-  // Обробник перетягування файлів
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -92,21 +100,18 @@ const CreateListingPage = () => {
     }
   };
 
-  // Обробник перетягування файлів - стан перетягування
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  // Обробник перетягування файлів - вихід із зони
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
-  // Обробник видалення завантаженого зображення
   const handleRemoveImage = (index: number) => {
     const newImages = [...formData.images];
     newImages.splice(index, 1);
@@ -122,7 +127,6 @@ const CreateListingPage = () => {
     setImagePreviewUrls(newPreviewUrls);
   };
 
-  // Валідація форми
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -159,7 +163,6 @@ const CreateListingPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Обробник відправки форми
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -167,29 +170,31 @@ const CreateListingPage = () => {
       return;
     }
 
-    // Створення об'єкту FormData для відправки файлів
     const submitData = new FormData();
     submitData.append("title", formData.title);
     submitData.append("description", formData.description);
-    submitData.append("price", formData.price);
-    submitData.append("categoryId", formData.categoryId);
+    submitData.append("price", parseFloat(formData.price).toString());
+    submitData.append("categoryId", Number(formData.categoryId).toString());
+    submitData.append("category", formData.categoryName);
     submitData.append("location", formData.location);
 
     formData.images.forEach((image) => {
       submitData.append("images", image);
     });
 
-    const resultAction = await dispatch(createListing(submitData));
-
-    if (createListing.fulfilled.match(resultAction)) {
-      // Перехід на сторінку створеного оголошення
-      navigate(`/listings/${resultAction.payload.id}`);
+    try {
+      const resultAction = await dispatch(createListing(submitData));
+      if (createListing.fulfilled.match(resultAction)) {
+        navigate(`/listings/${resultAction.payload.id}`);
+      } else {
+        alert("Не вдалося створити оголошення, спробуйте ще раз.");
+      }
+    } catch (error) {
+      console.error("Помилка при створенні оголошення:", error);
     }
   };
 
-  // Обробник для роботи з файлами зображень
   const handleFiles = (files: File[]) => {
-    // Перевірка типу файлів - тільки зображення
     const validImageTypes = [
       "image/jpeg",
       "image/png",
@@ -197,44 +202,29 @@ const CreateListingPage = () => {
       "image/webp",
     ];
     const imageFiles = files.filter((file) =>
-      validImageTypes.includes(file.type),
+      validImageTypes.includes(file.type)
     );
 
     if (imageFiles.length === 0) {
-      setErrors({
-        ...errors,
-        images:
-          "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
-      });
+      setErrors({ ...errors, images: "Завантажте тільки зображення" });
       return;
     }
 
-    // Обмеження на кількість зображень
     const totalImages = formData.images.length + imageFiles.length;
     if (totalImages > 10) {
-      setErrors({
-        ...errors,
-        images: "Максимальна кількість зображень - 10",
-      });
+      setErrors({ ...errors, images: "Максимум 10 фото" });
       return;
     }
 
-    // Створення URL для попереднього перегляду зображень
     const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file));
-
     setFormData({
       ...formData,
       images: [...formData.images, ...imageFiles],
     });
-
     setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
 
-    // Очищення помилки
     if (errors.images) {
-      setErrors({
-        ...errors,
-        images: undefined,
-      });
+      setErrors({ ...errors, images: undefined });
     }
   };
 
@@ -243,10 +233,7 @@ const CreateListingPage = () => {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         Створення нового оголошення
       </h1>
-
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="p-6">
-          <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Ліва колонка */}
               <div className="space-y-6">
@@ -506,8 +493,7 @@ const CreateListingPage = () => {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+     
   );
 };
 
