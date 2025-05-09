@@ -3,7 +3,15 @@ import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchCategories, fetchListings, Listing } from "../store/catalogSlice";
 import ListingCard from "../components/ui/ListingCard";
-import { ChevronRight, Tractor, Settings, TrendingUp, Tag } from "lucide-react";
+import { ChevronRight, Tractor, Settings, Tag, Combine } from "lucide-react";
+
+// export interface Category {
+//   id: string;
+//   name: string;
+//   slug: string;
+//   description: string;
+//   favorite?: boolean;
+// }
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
@@ -35,6 +43,21 @@ const HomePage = () => {
       });
   }, [dispatch, categories.length]);
 
+  function getCategoryIcon(slug: string): import("react").ReactNode {
+    switch (slug) {
+      case "tractors":
+        return <Tractor size={24} />;
+      case "combines":
+        return <Combine size={24} />;
+      case "reapers":
+        return <Settings size={24} />;
+      case "seeders":
+        return <Tag size={24} />;
+      default:
+        // Fallback icon for other categories
+        return <Tag size={24} />;
+    }
+  }
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Головний банер */}
@@ -65,7 +88,7 @@ const HomePage = () => {
       </div>
 
       {/* Категорії */}
-      <div className="mb-12">
+      {/* <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
           <Link
@@ -141,8 +164,112 @@ const HomePage = () => {
             </p>
           </Link>
         </div>
-      </div>
+      </div> */}
 
+{/* <div className="mb-12">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
+    <Link
+      to="/catalog"
+      className="text-green-600 hover:text-green-700 flex items-center"
+    >
+      Всі категорії <ChevronRight size={16} />
+    </Link>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {categories.length > 0 ? (
+      categories.slice(0, 4).map((category) => (
+        <Link
+          key={category.id}
+          to={`/catalog?category=${category.slug}`}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+              {getCategoryIcon(category.slug)}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+          </div>
+          <p className="text-gray-600">
+            {category.description}
+          </p>
+        </Link>
+      ))
+    ) : (
+      // Показуємо плейсхолдери під час завантаження
+      Array(4)
+        .fill(null)
+        .map((_, index) => (
+          <div
+            key={index}
+            className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        ))
+    )}
+  </div>
+</div> */}
+
+<div className="mb-12">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
+    <Link
+      to="/catalog"
+      className="text-green-600 hover:text-green-700 flex items-center"
+    >
+      Всі категорії <ChevronRight size={16} />
+    </Link>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {categories.length > 0 ? (
+      categories
+        .filter(category => category.favorite === true)
+        .slice(0, 4)
+        .map((category) => (
+          <Link
+            key={category.id}
+            to={`/catalog?category=${category.slug}`}
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                {getCategoryIcon(category.slug)}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+            </div>
+            <p className="text-gray-600">
+              {category.description}
+            </p>
+          </Link>
+        ))
+    ) : (
+      // Показуємо плейсхолдери під час завантаження
+      Array(4)
+        .fill(null)
+        .map((_, index) => (
+          <div
+            key={index}
+            className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        ))
+    )}
+  </div>
+</div>
       {/* Популярні оголошення */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">

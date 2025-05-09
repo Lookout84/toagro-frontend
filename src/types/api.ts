@@ -71,6 +71,7 @@ export interface ListingRequest {
   categoryId: number;
   location: string;
   images: File[] | string[];
+  condition: "NEW" | "USED";
 }
 
 export interface Listing {
@@ -84,6 +85,7 @@ export interface Listing {
   images: string[];
   views: number;
   active: boolean;
+  condition: 'NEW' | 'USED';
   createdAt: string;
   updatedAt: string;
   user: {
@@ -99,6 +101,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  favorite?: boolean;
   image?: string;
   parentId?: number;
   children?: Category[];
