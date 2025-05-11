@@ -19,7 +19,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  },
+  }
 );
 
 // Додавання перехоплювача відповідей для обробки помилок
@@ -39,7 +39,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 // API для авторизації
@@ -68,7 +68,11 @@ export const authAPI = {
     return api.get("/auth/me");
   },
 
-  updateProfile: (formData: { name?: string; email?: string; password?: string }) => {
+  updateProfile: (formData: {
+    name?: string;
+    email?: string;
+    password?: string;
+  }) => {
     return api.put("/auth/me", formData);
   },
 
@@ -94,11 +98,24 @@ export const listingsAPI = {
     return api.get("/listings/user/me");
   },
 
-  create: (formData: { name: string; description: string; price: number; categoryId: number }) => {
+  create: (formData: {
+    name: string;
+    description: string;
+    price: number;
+    categoryId: number;
+  }) => {
     return api.post("/listings", formData);
   },
 
-  update: (id: number, formData: { name?: string; description?: string; price?: number; categoryId?: number }) => {
+  update: (
+    id: number,
+    formData: {
+      name?: string;
+      description?: string;
+      price?: number;
+      categoryId?: number;
+    }
+  ) => {
     return api.put(`/listings/${id}`, formData);
   },
 
@@ -139,6 +156,82 @@ export const categoriesAPI = {
   },
 };
 
+// Add this after the categoriesAPI section
+
+// API для брендів (марок техніки)
+export const brandsAPI = {
+  getAll: (params?: Record<string, unknown>) => {
+    return api.get("/brands", { params });
+  },
+
+  getById: (id: number) => {
+    return api.get(`/brands/${id}`);
+  },
+
+  getBySlug: (slug: string) => {
+    return api.get(`/brands/slug/${slug}`);
+  },
+
+  // Адміністративні функції
+  create: (data: { name: string; description?: string; logo?: File }) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+
+    if (data.logo) {
+      formData.append("logo", data.logo);
+    }
+
+    return api.post("/brands", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  update: (
+    id: number,
+    data: { name?: string; description?: string; logo?: File }
+  ) => {
+    const formData = new FormData();
+
+    if (data.name) {
+      formData.append("name", data.name);
+    }
+
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+
+    if (data.logo) {
+      formData.append("logo", data.logo);
+    }
+
+    return api.put(`/brands/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  delete: (id: number) => {
+    return api.delete(`/brands/${id}`);
+  },
+
+  // Get popular/featured brands
+  getPopular: (limit = 10) => {
+    return api.get(`/brands/popular?limit=${limit}`);
+  },
+
+  // Search brands by name
+  search: (query: string) => {
+    return api.get(`/brands/search?q=${query}`);
+  },
+};
+
 // API для чату
 export const chatAPI = {
   getConversations: () => {
@@ -168,7 +261,11 @@ export const chatAPI = {
 
 // API для транзакцій/оплат
 export const transactionsAPI = {
-  create: (formData: { amount: number; description: string; userId: number }) => {
+  create: (formData: {
+    amount: number;
+    description: string;
+    userId: number;
+  }) => {
     return api.post("/transactions", formData);
   },
 
@@ -188,7 +285,11 @@ export const notificationsAPI = {
     return api.get("/notifications/settings");
   },
 
-  updateSettings: (settings: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }) => {
+  updateSettings: (settings: {
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+  }) => {
     return api.put("/notifications/settings", settings);
   },
 
@@ -196,7 +297,11 @@ export const notificationsAPI = {
     return api.get("/notifications/preferences");
   },
 
-  updatePreferences: (preferences: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }) => {
+  updatePreferences: (preferences: {
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    pushNotifications?: boolean;
+  }) => {
     return api.put("/notifications/preferences", preferences);
   },
 
@@ -270,11 +375,18 @@ export const adminAPI = {
     return api.get(`/notifications/templates/${id}`);
   },
 
-  createNotificationTemplate: (template: { title: string; body: string; type: string }) => {
+  createNotificationTemplate: (template: {
+    title: string;
+    body: string;
+    type: string;
+  }) => {
     return api.post("/notifications/templates", template);
   },
 
-  updateNotificationTemplate: (id: number, template: { title: string; body: string; type: string }) => {
+  updateNotificationTemplate: (
+    id: number,
+    template: { title: string; body: string; type: string }
+  ) => {
     return api.put(`/notifications/templates/${id}`, template);
   },
 
@@ -283,7 +395,11 @@ export const adminAPI = {
   },
 
   // API для масових розсилок
-  sendBulkEmails: (data: { subject: string; body: string; recipients: string[] }) => {
+  sendBulkEmails: (data: {
+    subject: string;
+    body: string;
+    recipients: string[];
+  }) => {
     return api.post("/bulk-notifications/email", data);
   },
 
@@ -291,7 +407,11 @@ export const adminAPI = {
     return api.post("/bulk-notifications/sms", data);
   },
 
-  sendBulkPush: (data: { title: string; body: string; recipients: string[] }) => {
+  sendBulkPush: (data: {
+    title: string;
+    body: string;
+    recipients: string[];
+  }) => {
     return api.post("/bulk-notifications/push", data);
   },
 
@@ -322,7 +442,13 @@ export const campaignsAPI = {
     return api.get("/campaigns", { params });
   },
 
-  create: (campaign: { name: string; description: string; startDate: string; endDate: string; [key: string]: unknown }) => {
+  create: (campaign: {
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    [key: string]: unknown;
+  }) => {
     return api.post("/campaigns", campaign);
   },
 
@@ -338,7 +464,16 @@ export const campaignsAPI = {
     return api.get(`/campaigns/${id}`);
   },
 
-  update: (id: number, campaign: { name?: string; description?: string; startDate?: string; endDate?: string; [key: string]: unknown }) => {
+  update: (
+    id: number,
+    campaign: {
+      name?: string;
+      description?: string;
+      startDate?: string;
+      endDate?: string;
+      [key: string]: unknown;
+    }
+  ) => {
     return api.put(`/campaigns/${id}`, campaign);
   },
 
@@ -378,7 +513,9 @@ export const campaignsAPI = {
 // API для запланованих завдань
 export const scheduledTasksAPI = {
   schedulListingDeactivation: (listingId: number) => {
-    return api.get(`/scheduled-tasks/listing/${listingId}/schedule-deactivation`);
+    return api.get(
+      `/scheduled-tasks/listing/${listingId}/schedule-deactivation`
+    );
   },
 
   schedulePaymentReminder: (paymentId: string) => {
@@ -386,15 +523,25 @@ export const scheduledTasksAPI = {
   },
 
   // Адміністративні функції
-  createTask: (task: { name: string; schedule: string; data: Record<string, unknown> }) => {
+  createTask: (task: {
+    name: string;
+    schedule: string;
+    data: Record<string, unknown>;
+  }) => {
     return api.post("/scheduled-tasks/task", task);
   },
 
-  createBatchTasks: (tasks: { name: string; schedule: string; data: Record<string, unknown> }[]) => {
+  createBatchTasks: (
+    tasks: { name: string; schedule: string; data: Record<string, unknown> }[]
+  ) => {
     return api.post("/scheduled-tasks/batch", { tasks });
   },
 
-  createRecurringTask: (task: { name: string; schedule: string; data: Record<string, unknown> }) => {
+  createRecurringTask: (task: {
+    name: string;
+    schedule: string;
+    data: Record<string, unknown>;
+  }) => {
     return api.post("/scheduled-tasks/recurring", task);
   },
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchCategories } from "../store/catalogSlice";
+import { fetchBrands } from "../store/brandSlice"; // Import the brand action
 import { createListing } from "../store/listingSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 
@@ -14,6 +15,8 @@ interface FormData {
   location: string;
   images: File[];
   condition: "NEW" | "USED";
+  brandId: string; // Change from brand string to brandId
+  brandName: string; // Add brandName to store the selected brand name
 }
 
 interface FormErrors {
@@ -23,6 +26,7 @@ interface FormErrors {
   categoryId?: string | undefined;
   location?: string | undefined;
   images?: string | undefined;
+  brandId?: string; // Change to brandId
 }
 
 const CreateListingPage = () => {
@@ -31,6 +35,9 @@ const CreateListingPage = () => {
 
   const { categories, status: categoriesStatus } = useAppSelector(
     (state) => state.catalog
+  );
+  const { brands, status: brandsStatus } = useAppSelector(
+    (state) => state.brand
   );
   const { isLoading } = useAppSelector((state) => state.listing);
 
@@ -43,6 +50,8 @@ const CreateListingPage = () => {
     location: "",
     images: [],
     condition: "USED",
+    brandId: "", // Initialize brandId as empty string
+    brandName: "", // Initialize brandName as empty string
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -53,7 +62,10 @@ const CreateListingPage = () => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
-  }, [dispatch, categories.length]);
+    if (brands.length === 0) {
+      dispatch(fetchBrands());
+    }
+  }, [dispatch, categories.length, brands.length]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -71,6 +83,15 @@ const CreateListingPage = () => {
         ...formData,
         [name]: value,
         categoryName: selectedCategory ? selectedCategory.name : "",
+      });
+    }
+    // Handle brand selection
+    else if (name === "brandId") {
+      const selectedBrand = brands.find((brand) => brand.id === Number(value));
+      setFormData({
+        ...formData,
+        [name]: value,
+        brandName: selectedBrand ? selectedBrand.name : "",
       });
     } else {
       setFormData({
@@ -138,6 +159,10 @@ const CreateListingPage = () => {
       newErrors.title = "Введіть назву оголошення";
     }
 
+    if (!formData.brandId) {
+      newErrors.brandId = "Виберіть марку техніки";
+    }
+
     if (!formData.description.trim()) {
       newErrors.description = "Введіть опис оголошення (не менше 20 символів)";
     }
@@ -182,6 +207,8 @@ const CreateListingPage = () => {
     submitData.append("category", formData.categoryName);
     submitData.append("location", formData.location);
     submitData.append("condition", formData.condition);
+    submitData.append("brandId", formData.brandId);
+    submitData.append("brand", formData.brandName); // Send brand name as well
 
     formData.images.forEach((image) => {
       submitData.append("images", image);
@@ -265,7 +292,43 @@ const CreateListingPage = () => {
                 <p className="mt-1 text-sm text-red-500">{errors.title}</p>
               )}
             </div>
-
+            {/* Марка техніки - update this part */}
+            <div>
+              <label
+                htmlFor="brandId"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Марка техніки *
+              </label>
+              <div className="relative">
+                <select
+                  id="brandId"
+                  name="brandId"
+                  value={formData.brandId}
+                  onChange={handleInputChange}
+                  className={`appearance-none w-full px-4 py-2 border ${
+                    errors.brandId ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                >
+                  <option value="">Виберіть марку</option>
+                  {brandsStatus === "loading" ? (
+                    <option disabled>Завантаження марок...</option>
+                  ) : (
+                    brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown size={18} className="text-gray-400" />
+                </div>
+              </div>
+              {errors.brandId && (
+                <p className="mt-1 text-sm text-red-500">{errors.brandId}</p>
+              )}
+            </div>
             {/* Опис */}
             <div>
               <label

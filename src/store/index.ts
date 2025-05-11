@@ -8,6 +8,7 @@ import notificationsReducer from "./notificationsSlice";
 import transactionsReducer from "./transactionsSlice";
 import adminReducer from "./adminSlice";
 import campaignsReducer from "./campaignsSlice";
+import brandReducer from "./brandSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,7 +19,8 @@ export const store = configureStore({
     notifications: notificationsReducer,
     transactions: transactionsReducer,
     admin: adminReducer,
-    campaigns: campaignsReducer
+    campaigns: campaignsReducer,
+    brand: brandReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

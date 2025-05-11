@@ -72,6 +72,7 @@ export interface ListingRequest {
   location: string;
   images: File[] | string[];
   condition: "NEW" | "USED";
+  brand?: string; // Add brand field
 }
 
 export interface Listing {
@@ -82,6 +83,7 @@ export interface Listing {
   location: string;
   category: string;
   categoryId: number;
+  brand?: string; // Додайте поле brand
   images: string[];
   views: number;
   active: boolean;
@@ -146,6 +148,14 @@ export interface SendMessageRequest {
   receiverId: number;
   content: string;
   listingId?: number;
+}
+// Типи для марки
+export interface Brand {
+  id: number;
+  name: string;
+  slug?: string;
+  logo?: string;
+  description?: string;
 }
 
 // Типи для транзакцій
