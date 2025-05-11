@@ -35,7 +35,7 @@ const HomePage = () => {
 
     // Завантаження нових оголошень
     dispatch(
-      fetchListings({ sortBy: "createdAt", sortOrder: "desc", limit: 8 }),
+      fetchListings({ sortBy: "createdAt", sortOrder: "desc", limit: 8 })
     )
       .unwrap()
       .then((result) => {
@@ -88,7 +88,8 @@ const HomePage = () => {
       </div>
 
       {/* Категорії */}
-      {/* <div className="mb-12">
+
+      <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
           <Link
@@ -100,176 +101,45 @@ const HomePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link
-            to="/catalog?category=tractors"
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-                <Tractor size={24} />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Трактори</h3>
-            </div>
-            <p className="text-gray-600">
-              Нові та вживані трактори провідних виробників
-            </p>
-          </Link>
-
-          <Link
-            to="/catalog?category=harvesters"
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-                <TrendingUp size={24} />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Комбайни</h3>
-            </div>
-            <p className="text-gray-600">
-              Зернозбиральні та інші комбайни для вашого господарства
-            </p>
-          </Link>
-
-          <Link
-            to="/catalog?category=parts"
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-                <Settings size={24} />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Запчастини
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              Оригінальні та аналогові запчастини для сільгосптехніки
-            </p>
-          </Link>
-
-          <Link
-            to="/catalog?category=tillage"
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-                <Tag size={24} />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Ґрунтообробка
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              Плуги, культиватори та інша техніка для обробки ґрунту
-            </p>
-          </Link>
+          {categories.length > 0
+            ? categories
+                .filter((category) => category.favorite === true)
+                .slice(0, 4)
+                .map((category) => (
+                  <Link
+                    key={category.id}
+                    to={`/catalog?category=${category.slug}`}
+                    className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                        {getCategoryIcon(category.slug)}
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {category.name}
+                      </h3>
+                    </div>
+                    <p className="text-gray-600">{category.description}</p>
+                  </Link>
+                ))
+            : // Показуємо плейсхолдери під час завантаження
+              Array(4)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+                      <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  </div>
+                ))}
         </div>
-      </div> */}
-
-{/* <div className="mb-12">
-  <div className="flex justify-between items-center mb-6">
-    <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
-    <Link
-      to="/catalog"
-      className="text-green-600 hover:text-green-700 flex items-center"
-    >
-      Всі категорії <ChevronRight size={16} />
-    </Link>
-  </div>
-
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    {categories.length > 0 ? (
-      categories.slice(0, 4).map((category) => (
-        <Link
-          key={category.id}
-          to={`/catalog?category=${category.slug}`}
-          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-        >
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-              {getCategoryIcon(category.slug)}
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-          </div>
-          <p className="text-gray-600">
-            {category.description}
-          </p>
-        </Link>
-      ))
-    ) : (
-      // Показуємо плейсхолдери під час завантаження
-      Array(4)
-        .fill(null)
-        .map((_, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
-              <div className="h-5 bg-gray-200 rounded w-1/2"></div>
-            </div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        ))
-    )}
-  </div>
-</div> */}
-
-<div className="mb-12">
-  <div className="flex justify-between items-center mb-6">
-    <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
-    <Link
-      to="/catalog"
-      className="text-green-600 hover:text-green-700 flex items-center"
-    >
-      Всі категорії <ChevronRight size={16} />
-    </Link>
-  </div>
-
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    {categories.length > 0 ? (
-      categories
-        .filter(category => category.favorite === true)
-        .slice(0, 4)
-        .map((category) => (
-          <Link
-            key={category.id}
-            to={`/catalog?category=${category.slug}`}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
-                {getCategoryIcon(category.slug)}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-            </div>
-            <p className="text-gray-600">
-              {category.description}
-            </p>
-          </Link>
-        ))
-    ) : (
-      // Показуємо плейсхолдери під час завантаження
-      Array(4)
-        .fill(null)
-        .map((_, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
-          >
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
-              <div className="h-5 bg-gray-200 rounded w-1/2"></div>
-            </div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        ))
-    )}
-  </div>
-</div>
+      </div>
       {/* Популярні оголошення */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
@@ -286,9 +156,11 @@ const HomePage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {popularListings.length > 0
-            ? popularListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))
+            ? popularListings.map((listing) => {
+                console.log("Listing in card:", listing);
+                return <ListingCard key={listing.id} listing={listing} />;
+              })
+              
             : // Заглушки для відображення під час завантаження
               Array(4)
                 .fill(null)
@@ -445,3 +317,139 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+{
+  /* Категорії */
+}
+{
+  /* <div className="mb-12">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
+          <Link
+            to="/catalog"
+            className="text-green-600 hover:text-green-700 flex items-center"
+          >
+            Всі категорії <ChevronRight size={16} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link
+            to="/catalog?category=tractors"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                <Tractor size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Трактори</h3>
+            </div>
+            <p className="text-gray-600">
+              Нові та вживані трактори провідних виробників
+            </p>
+          </Link>
+
+          <Link
+            to="/catalog?category=harvesters"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                <TrendingUp size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Комбайни</h3>
+            </div>
+            <p className="text-gray-600">
+              Зернозбиральні та інші комбайни для вашого господарства
+            </p>
+          </Link>
+
+          <Link
+            to="/catalog?category=parts"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                <Settings size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Запчастини
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              Оригінальні та аналогові запчастини для сільгосптехніки
+            </p>
+          </Link>
+
+          <Link
+            to="/catalog?category=tillage"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+                <Tag size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Ґрунтообробка
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              Плуги, культиватори та інша техніка для обробки ґрунту
+            </p>
+          </Link>
+        </div>
+      </div> */
+}
+
+{
+  /* <div className="mb-12">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-2xl font-bold text-gray-900">Категорії</h2>
+    <Link
+      to="/catalog"
+      className="text-green-600 hover:text-green-700 flex items-center"
+    >
+      Всі категорії <ChevronRight size={16} />
+    </Link>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {categories.length > 0 ? (
+      categories.slice(0, 4).map((category) => (
+        <Link
+          key={category.id}
+          to={`/catalog?category=${category.slug}`}
+          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-green-500 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4">
+              {getCategoryIcon(category.slug)}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+          </div>
+          <p className="text-gray-600">
+            {category.description}
+          </p>
+        </Link>
+      ))
+    ) : (
+      // Показуємо плейсхолдери під час завантаження
+      Array(4)
+        .fill(null)
+        .map((_, index) => (
+          <div
+            key={index}
+            className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+              <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        ))
+    )}
+  </div>
+</div> */
+}

@@ -5,11 +5,13 @@ import { fetchCategories } from "../store/catalogSlice";
 import { fetchBrands } from "../store/brandSlice"; // Import the brand action
 import { createListing } from "../store/listingSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
+import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
 
 interface FormData {
   title: string;
   description: string;
   price: string;
+  currency: "UAH" | "USD" | "EUR"; // Add currency field
   categoryId: string;
   categoryName: string;
   location: string;
@@ -26,7 +28,7 @@ interface FormErrors {
   categoryId?: string | undefined;
   location?: string | undefined;
   images?: string | undefined;
-  brandId?: string; // Change to brandId
+  brandId?: string | undefined;
 }
 
 const CreateListingPage = () => {
@@ -37,14 +39,16 @@ const CreateListingPage = () => {
     (state) => state.catalog
   );
   const { brands, status: brandsStatus } = useAppSelector(
-    (state) => state.brand
+    (state) => state.brands
   );
+
   const { isLoading } = useAppSelector((state) => state.listing);
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     price: "",
+    currency: "UAH", // Default to Ukrainian hryvnia
     categoryId: "",
     categoryName: "",
     location: "",
@@ -57,6 +61,24 @@ const CreateListingPage = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [brandSearchQuery, setBrandSearchQuery] = useState<string>("");
+  const [brandsDropdownOpen, setBrandsDropdownOpen] = useState(false);
+
+  // Add this right after the component declaration
+  useEffect(() => {
+    console.log("Brands data:", brands);
+    console.log("Brands status:", brandsStatus);
+
+    // Count brands with active status
+    if (Array.isArray(brands)) {
+      console.log("Total brands:", brands.length);
+      console.log(
+        "Active brands:",
+        brands.filter((brand) => brand.active).length
+      );
+      console.log("First 3 brands:", brands.slice(0, 3));
+    }
+  }, [brands, brandsStatus]);
 
   useEffect(() => {
     if (categories.length === 0) {
@@ -106,6 +128,11 @@ const CreateListingPage = () => {
         [name]: undefined,
       });
     }
+  };
+
+  const handleBrandSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBrandSearchQuery(e.target.value);
+    setBrandsDropdownOpen(true); // Always show dropdown when user is typing
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,23 +226,20 @@ const CreateListingPage = () => {
       return;
     }
 
-    const submitData = new FormData();
-    submitData.append("title", formData.title);
-    submitData.append("description", formData.description);
-    submitData.append("price", parseFloat(formData.price).toString());
-    submitData.append("categoryId", Number(formData.categoryId).toString());
-    submitData.append("category", formData.categoryName);
-    submitData.append("location", formData.location);
-    submitData.append("condition", formData.condition);
-    submitData.append("brandId", formData.brandId);
-    submitData.append("brand", formData.brandName); // Send brand name as well
-
-    formData.images.forEach((image) => {
-      submitData.append("images", image);
-    });
+    const jsonData = {
+      title: formData.title,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      currency: formData.currency,
+      category: formData.categoryName, // Важливо використовувати categoryName
+      categoryId: Number(formData.categoryId),
+      location: formData.location,
+      condition: formData.condition === "NEW" ? "new" : "used", // Важливо привести до нижнього регістру
+      brandId: Number(formData.brandId),
+    };
 
     try {
-      const resultAction = await dispatch(createListing(submitData));
+      const resultAction = await dispatch(createListing(jsonData));
       if (createListing.fulfilled.match(resultAction)) {
         navigate(`/listings/${resultAction.payload.id}`);
       } else {
@@ -292,7 +316,7 @@ const CreateListingPage = () => {
                 <p className="mt-1 text-sm text-red-500">{errors.title}</p>
               )}
             </div>
-            {/* Марка техніки - update this part */}
+            {/* Марка техніки - improved searchable dropdown */}
             <div>
               <label
                 htmlFor="brandId"
@@ -300,30 +324,103 @@ const CreateListingPage = () => {
               >
                 Марка техніки *
               </label>
-              <div className="relative">
-                <select
-                  id="brandId"
-                  name="brandId"
-                  value={formData.brandId}
-                  onChange={handleInputChange}
-                  className={`appearance-none w-full px-4 py-2 border ${
+              <div className="relative" id="brands-dropdown-container">
+                <div
+                  className={`relative w-full border ${
                     errors.brandId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                  } rounded-md focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500`}
                 >
-                  <option value="">Виберіть марку</option>
-                  {brandsStatus === "loading" ? (
-                    <option disabled>Завантаження марок...</option>
-                  ) : (
-                    brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Почніть вводити назву марки..."
+                    value={brandSearchQuery}
+                    onChange={handleBrandSearchChange}
+                    onFocus={() => setBrandsDropdownOpen(true)}
+                    className="w-full px-4 py-2 rounded-md focus:outline-none"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                    <button
+                      type="button"
+                      onClick={() => setBrandsDropdownOpen(!brandsDropdownOpen)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <ChevronDown size={18} className="text-gray-400" />
+                    </button>
+                  </div>
                 </div>
+
+                {brandsDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {brandsStatus === "loading" ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">
+                        Завантаження марок...
+                      </div>
+                    ) : Array.isArray(brands) && brands.length > 0 ? (
+                      <ul className="py-1">
+                        {/* Debug info */}
+                        <li className="px-4 py-1 text-xs text-gray-500 border-b">
+                          Знайдено брендів: {brands.length}
+                        </li>
+                        {brands
+                          // Filter by active status only if needed (remove if all brands should be shown)
+                          // .filter((brand) => brand.active !== false)
+                          .filter((brand) =>
+                            brandSearchQuery
+                              ? brand.name
+                                  .toLowerCase()
+                                  .includes(brandSearchQuery.toLowerCase())
+                              : true
+                          )
+                          .map((brand) => (
+                            <li key={brand.id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    brandId: brand.id.toString(),
+                                    brandName: brand.name,
+                                  });
+                                  setBrandSearchQuery(brand.name);
+                                  setBrandsDropdownOpen(false);
+                                  // Clear any error
+                                  if (errors.brandId) {
+                                    setErrors({
+                                      ...errors,
+                                      brandId: undefined,
+                                    });
+                                  }
+                                }}
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                                  formData.brandId === brand.id.toString()
+                                    ? "bg-green-50 text-green-700"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {brand.name}
+                              </button>
+                            </li>
+                          ))}
+                        {brands.filter((brand) =>
+                          // Match filtering logic above - don't check brand.active here
+                          brandSearchQuery
+                            ? brand.name
+                                .toLowerCase()
+                                .includes(brandSearchQuery.toLowerCase())
+                            : true
+                        ).length === 0 && (
+                          <li className="px-4 py-2 text-sm text-gray-500">
+                            За вашим запитом нічого не знайдено
+                          </li>
+                        )}
+                      </ul>
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-500">
+                        Немає доступних марок
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {errors.brandId && (
                 <p className="mt-1 text-sm text-red-500">{errors.brandId}</p>
@@ -355,29 +452,53 @@ const CreateListingPage = () => {
               )}
             </div>
 
-            {/* Ціна */}
+            {/* Ціна з вибором валюти */}
             <div>
               <label
                 htmlFor="price"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Ціна (грн) *
+                Ціна *
               </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                placeholder="Наприклад: 1000000"
-                min="0"
-                step="1"
-                className={`w-full px-4 py-2 border ${
-                  errors.price ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-              />
+              <div className="flex">
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  placeholder={`Наприклад: 1000000 ${getCurrencySymbol(formData.currency)}`}
+                  min="0"
+                  step="1"
+                  className={`w-3/4 px-4 py-2 border ${
+                    errors.price ? "border-red-500" : "border-gray-300"
+                  } rounded-l-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                />
+                <div className="relative w-1/4">
+                  <select
+                    id="currency"
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleInputChange}
+                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 rounded-r-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="UAH">{getCurrencySymbol("UAH")} UAH</option>
+                    <option value="USD">{getCurrencySymbol("USD")} USD</option>
+                    <option value="EUR">{getCurrencySymbol("EUR")} EUR</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <ChevronDown size={18} className="text-gray-400" />
+                  </div>
+                </div>
+              </div>
               {errors.price && (
                 <p className="mt-1 text-sm text-red-500">{errors.price}</p>
+              )}
+              {formData.price && !errors.price && (
+                <div className="text-sm text-gray-500 mt-1">
+                  Буде відображатися як:{" "}
+                  {formatPriceWithSymbol(formData.price, formData.currency)}
+                </div>
               )}
             </div>
           </div>

@@ -20,7 +20,9 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  currency: "UAH" | "USD" | "EUR"; // Додаємо поле валюти
   location: string;
+  condition: "NEW" | "USED";
   category: string;
   categoryId?: number;
   images: string[];
@@ -106,12 +108,13 @@ export const fetchCategories = createAsyncThunk(
       const response = await categoriesAPI.getAll();
       return response.data.data.categories;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Помилка завантаження категорій";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Помилка завантаження категорій";
       return rejectWithValue(errorMessage);
     }
-  },
+  }
 );
 
 export const fetchCategoryTree = createAsyncThunk(
@@ -121,16 +124,22 @@ export const fetchCategoryTree = createAsyncThunk(
       const response = await categoriesAPI.getTree();
       return response.data.data.categoryTree;
     } catch (error: unknown) {
-      const errorMessage = 
-        error && typeof error === 'object' && 'response' in error && 
-        error.response && typeof error.response === 'object' && 'data' in error.response && 
-        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data && 
-        typeof error.response.data.message === 'string' 
-          ? error.response.data.message 
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
           : "Помилка завантаження дерева категорій";
       return rejectWithValue(errorMessage);
     }
-  },
+  }
 );
 
 export const fetchCategoryBySlug = createAsyncThunk(
@@ -140,15 +149,22 @@ export const fetchCategoryBySlug = createAsyncThunk(
       const response = await categoriesAPI.getBySlug(slug);
       return response.data.data.category;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error &&
-          error.response && typeof error.response === 'object' && 'data' in error.response) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
         return rejectWithValue(
-          (error.response.data as { message?: string })?.message || "Категорію не знайдено",
+          (error.response.data as { message?: string })?.message ||
+            "Категорію не знайдено"
         );
       }
       return rejectWithValue("Категорію не знайдено");
     }
-  },
+  }
 );
 
 export const fetchListings = createAsyncThunk(
@@ -158,14 +174,24 @@ export const fetchListings = createAsyncThunk(
       const response = await listingsAPI.getAll(params);
       return response.data.data as ListingsResponse;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && 
-          error.response && typeof error.response === 'object' && 'data' in error.response && 
-          error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
-        return rejectWithValue(error.response.data.message || "Помилка завантаження оголошень");
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data
+      ) {
+        return rejectWithValue(
+          error.response.data.message || "Помилка завантаження оголошень"
+        );
       }
       return rejectWithValue("Помилка завантаження оголошень");
     }
-  },
+  }
 );
 
 // Створення Redux slice
@@ -237,9 +263,38 @@ const catalogSlice = createSlice({
       })
       .addCase(fetchListings.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.listings = action.payload.listings;
-        state.meta = action.payload.meta;
+        console.log("API Listings Response:", action.payload);
+
+        // Якщо це ListingsResponse
+        if (action.payload && Array.isArray(action.payload.listings)) {
+          state.listings = action.payload.listings;
+          state.meta = action.payload.meta;
+        } else {
+          state.listings = [];
+          state.meta = { total: 0, page: 1, limit: 10, pages: 0 };
+        }
       })
+      // .addCase(fetchListings.fulfilled, (state, action) => {
+      //   state.status = "succeeded";
+
+      //   // Логуємо відповідь API для діагностики
+      //   console.log("API Listings Response:", action.payload);
+
+      //   // Перевіряємо перший елемент (якщо є)
+      //   if (Array.isArray(action.payload) && action.payload.length > 0) {
+      //     console.log("First listing:", action.payload[0]);
+      //     console.log("Currency from API:", action.payload[0].currency);
+      //   }
+
+      //   // Встановлюємо listings
+      //   if (Array.isArray(action.payload)) {
+      //     state.listings = action.payload;
+      //   } else if (action.payload && Array.isArray(action.payload.listings)) {
+      //     state.listings = action.payload.listings;
+      //   } else {
+      //     state.listings = [];
+      //   }
+      // })
       .addCase(fetchListings.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;

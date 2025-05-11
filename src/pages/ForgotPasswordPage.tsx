@@ -65,7 +65,7 @@ const ForgotPasswordPage = () => {
                 Ми надіслали інструкції з відновлення паролю на адресу {email}. Будь ласка, перевірте вашу поштову скриньку.
               </p>
               <p className="text-gray-600 mb-4">
-                Не отримали листа? Перевірте папку "Спам" або
+                Не отримали листа? Перевірте папку &quot;Спам&quot; або
                 <button
                   className="text-green-600 hover:text-green-700 ml-1 underline"
                   onClick={() => {

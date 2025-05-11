@@ -6,9 +6,9 @@ import {
   Link,
   useLocation,
 } from "react-router-dom";
-import AuthContext from "../context/AuthContext";
-import { useAppDispatch, useAppSelector } from "../store";
-import { fetchUserListings, deleteListing } from "../store/listingSlice";
+import AuthContext from "../../context/AuthContext";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { fetchUserListings, deleteListing } from "../../store/listingSlice";
 import {
   User,
   Settings,
@@ -21,8 +21,8 @@ import {
   AlertTriangle,
   ExternalLink,
 } from "lucide-react";
-import Loader from "../components/common/Loader";
-import ListingCard from "../components/ui/ListingCard";
+import Loader from "../../components/common/Loader";
+import ListingCard from "../../components/ui/ListingCard";
 
 // Компонент особистої інформації
 const ProfileInfo = () => {

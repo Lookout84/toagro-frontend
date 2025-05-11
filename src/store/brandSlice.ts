@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { brandsAPI } from "../api/apiClient";
 import { Brand } from "../types/api";
 
-export interface BrandState {
+interface BrandState {
   brands: Brand[];
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
@@ -17,7 +17,8 @@ const initialState: BrandState = {
 // Fetch all brands
 export const fetchBrands = createAsyncThunk("brands/fetchBrands", async () => {
   const response = await brandsAPI.getAll();
-  return response.data;
+  // Extract brands from the nested structure
+  return response.data.data.brands || [];
 });
 
 const brandSlice = createSlice({

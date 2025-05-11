@@ -21,7 +21,7 @@ const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 
 // Сторінки профілю користувача
-const ProfilePage = lazy(() => import("../pages/ProfilePage"));
+const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
 const UserListingsPage = lazy(() => import("../pages/profile/UserListingsPage"));
 const UserProfileSettingsPage = lazy(() => import("../pages/profile/UserProfileSettingsPage"));
 const UserPasswordChangePage = lazy(() => import("../pages/profile/UserPasswordChangePage"));
@@ -81,7 +81,7 @@ const AppRoutes = () => {
           }
         />
         <Route
-          path="/listings/edit/:id"
+          path="profile/listings/edit/:id"
           element={
             <ProtectedRoute>
               <EditListingPage />

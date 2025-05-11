@@ -14,20 +14,14 @@ import {
 import Loader from "../../components/common/Loader";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import Modal from "../../components/common/Modal"; // Перенесено вгору
 import type { Listing as BaseCatalogListing } from "../../store/catalogSlice";
 
+// Об'єднано типи в один
 export type CatalogListing = BaseCatalogListing & {
-  status: string; // Added 'status' property
-};
-import Modal from "../../components/common/Modal";
-
-export type Listing = {
-  id: number;
-  title: string;
-  price: number;
-  createdAt: string;
-  images: string[];
-  status: string; // Added 'status' property
+  status: string;
+  currency?: string; // Додано currency для коректного форматування ціни
+  images?: Array<{ url?: string; path?: string; } | string>; // Додано тип для images, враховуючи можливість string
 };
 
 const UserListingsPage = () => {
@@ -68,11 +62,13 @@ const UserListingsPage = () => {
     setIsRefreshing(false);
   };
 
-  // Format price in UAH
-  const formatPrice = (price: number) => {
+  // Format price with correct currency
+  const formatPrice = (price: number, currency = "UAH") => {
+    // Визначаємо правильну валюту для форматування
+    const currencyCode = currency.toUpperCase().trim();
     return new Intl.NumberFormat("uk-UA", {
       style: "currency",
-      currency: "UAH",
+      currency: currencyCode,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
@@ -184,7 +180,12 @@ const UserListingsPage = () => {
                         {listing.images && listing.images.length > 0 ? (
                           <img
                             className="h-10 w-10 rounded-md object-cover"
-                            src={listing.images[0]}
+                            src={typeof listing.images[0] === 'string' 
+                              ? listing.images[0] 
+                              : (listing.images[0] 
+                                ? ((listing.images[0] as {url?: string; path?: string})?.url || 
+                                   (listing.images[0] as {url?: string; path?: string})?.path || '')
+                                : '')}
                             alt={listing.title}
                           />
                         ) : (
@@ -201,7 +202,7 @@ const UserListingsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {formatPrice(listing.price)}
+                        {formatPrice(listing.price, listing.currency)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -251,23 +252,22 @@ const UserListingsPage = () => {
           isOpen={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
           title="Підтвердження видалення"
-          >
-            <p>Ви впевнені, що хочете видалити це оголошення? Цю дію не можна буде скасувати.</p>
-            <div className="mt-4 flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Скасувати
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleConfirmDelete}
-              >
-                Видалити
-              </Button>
-            </div>
+        >
           <p>Ви впевнені, що хочете видалити це оголошення? Цю дію не можна буде скасувати.</p>
+          <div className="mt-4 flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Скасувати
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmDelete}
+            >
+              Видалити
+            </Button>
+          </div>
         </Modal>
       </div>
     </Card>

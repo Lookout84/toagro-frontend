@@ -153,9 +153,13 @@ export interface SendMessageRequest {
 export interface Brand {
   id: number;
   name: string;
-  slug?: string;
-  logo?: string;
+  slug: string;
   description?: string;
+  logo?: string;
+  active: boolean;
+  popular: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Типи для транзакцій

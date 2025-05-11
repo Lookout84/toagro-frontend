@@ -13,6 +13,7 @@ import brandReducer from "./brandSlice";
 export const store = configureStore({
   reducer: {
     catalog: catalogReducer,
+    brands: brandReducer,
     listing: listingReducer,
     chat: chatReducer,
     ui: uiReducer,
@@ -20,7 +21,6 @@ export const store = configureStore({
     transactions: transactionsReducer,
     admin: adminReducer,
     campaigns: campaignsReducer,
-    brand: brandReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

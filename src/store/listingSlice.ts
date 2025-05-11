@@ -26,14 +26,43 @@ export const fetchListingById = createAsyncThunk(
   async (id: number, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getById(id);
-      return response.data.data.listing;
-    } catch (error: any) {
-      // Обробка помилки  
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження оголошення",
-      );
+
+      // Додаємо логування для перевірки структури відповіді
+      console.log("API response for listing:", response);
+
+      // Перевіряємо структуру і використовуємо правильний шлях
+      if (response.data && response.data.data) {
+        // Якщо дані приходять у вигляді { data: { data: LISTING } }
+        return response.data.data;
+      } else if (response.data && response.data.listing) {
+        // Альтернативний шлях: { data: { listing: LISTING } }
+        return response.data.listing;
+      } else if (response.data) {
+        // Дані приходять прямо в полі data
+        return response.data;
+      } else {
+        // Якщо структура зовсім інша
+        console.error("Unexpected API response structure:", response);
+        return rejectWithValue("Неочікувана структура відповіді API");
+      }
+    } catch (error: unknown) {
+      // Обробка помилки залишається без змін
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        return rejectWithValue(
+          // @ts-expect-error: dynamic access
+          error.response.data?.message || "Помилка завантаження оголошення"
+        );
+      }
+      return rejectWithValue("Помилка завантаження оголошення");
     }
-  },
+  }
 );
 
 export const fetchUserListings = createAsyncThunk(
@@ -42,35 +71,49 @@ export const fetchUserListings = createAsyncThunk(
     try {
       const response = await listingsAPI.getUserListings();
       return response.data.data.listings;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Помилка завантаження ваших оголошень",
-      );
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const data = error.response.data;
+        const message =
+          data && typeof data === "object" && "message" in data
+            ? (data as { message?: string }).message
+            : undefined;
+        return rejectWithValue(
+          message || "Помилка завантаження ваших оголошень"
+        );
+      }
+      return rejectWithValue("Помилка завантаження ваших оголошень");
     }
-  },
+  }
 );
 
 export const createListing = createAsyncThunk(
-  "listing/createListing",
-  async (formData: any, { rejectWithValue }) => {
+  "listings/create",
+  async (listingData: any, { rejectWithValue }) => {
     try {
-      const response = await listingsAPI.create(formData);
-      toast.success("Оголошення успішно створено!");
+      const response = await listingsAPI.create(listingData);
       return response.data.data.listing;
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Помилка створення оголошення";
-      toast.error(errorMessage);
-      return rejectWithValue(errorMessage);
+    } catch (error) {
+      // Обробка помилок
+      return rejectWithValue(
+        (error as any).response?.data?.error || "Не вдалося створити оголошення"
+      );
     }
-  },
+  }
 );
 
 export const updateListing = createAsyncThunk(
   "listing/updateListing",
   async (
     { id, formData }: { id: number; formData: any },
-    { rejectWithValue },
+    { rejectWithValue }
   ) => {
     try {
       const response = await listingsAPI.update(id, formData);
@@ -82,7 +125,7 @@ export const updateListing = createAsyncThunk(
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
-  },
+  }
 );
 
 export const deleteListing = createAsyncThunk(
@@ -98,7 +141,7 @@ export const deleteListing = createAsyncThunk(
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
-  },
+  }
 );
 
 // Створення Redux slice
@@ -118,11 +161,11 @@ const listingSlice = createSlice({
     builder
       .addCase(fetchListingById.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
+        state.currentListing = null;
       })
       .addCase(fetchListingById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentListing = action.payload;
+        state.currentListing = action.payload; // тут має бути саме оголошення
       })
       .addCase(fetchListingById.rejected, (state, action) => {
         state.isLoading = false;
@@ -168,7 +211,7 @@ const listingSlice = createSlice({
 
         // Оновлюємо оголошення в списку оголошень користувача
         const index = state.userListings.findIndex(
-          (listing) => listing.id === action.payload.id,
+          (listing) => listing.id === action.payload.id
         );
         if (index !== -1) {
           state.userListings[index] = action.payload;
@@ -189,7 +232,7 @@ const listingSlice = createSlice({
 
         // Видаляємо оголошення зі списку оголошень користувача
         state.userListings = state.userListings.filter(
-          (listing) => listing.id !== action.payload,
+          (listing) => listing.id !== action.payload
         );
 
         // Якщо видаляємо поточне оголошення, очищаємо його

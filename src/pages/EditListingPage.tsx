@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchListingById, updateListing } from "../store/listingSlice";
 import { fetchCategories } from "../store/catalogSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import Loader from "../components/common/Loader";
+import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
 
 interface FormData {
   title: string;
   description: string;
   price: string;
+  currency: "UAH" | "USD" | "EUR";
   categoryId: string;
   location: string;
   images: (File | string)[];
@@ -29,15 +31,18 @@ const EditListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { currentListing, isLoading } = useAppSelector((state) => state.listing);
+  const { currentListing, isLoading } = useAppSelector(
+    (state) => state.listing
+  );
   const { categories, status: categoriesStatus } = useAppSelector(
-    (state) => state.catalog,
+    (state) => state.catalog
   );
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     price: "",
+    currency: "UAH",
     categoryId: "",
     location: "",
     images: [],
@@ -56,32 +61,106 @@ const EditListingPage = () => {
     }
 
     if (id) {
+      console.log("Завантаження оголошення ID:", id);
       dispatch(fetchListingById(parseInt(id)));
     }
   }, [dispatch, id, categories.length]);
 
+  // Виправлення: Перенесено функцію getListingValue за межі useEffect
+  // та зроблено її через useCallback для оптимізації
+  const getListingValue = useCallback(
+    (key: string, defaultValue: string | number | string[] | null = "") => {
+      if (!currentListing) return defaultValue;
+
+      // Випадок 1: поле існує безпосередньо в currentListing
+      if (key in currentListing) {
+        if (key in currentListing) {
+          return currentListing[key as keyof typeof currentListing];
+        }
+      }
+
+      // Випадок 2: поле вкладене в data
+      if (
+        currentListing &&
+        (currentListing as any).data &&
+        (currentListing as any).data[key] !== undefined
+      ) {
+        return (currentListing as any)?.data?.[key];
+      }
+
+      // Випадок 3: поле вкладене в data.listing
+      if (
+        (currentListing as any)?.data?.listing &&
+        (currentListing as any).data.listing[key] !== undefined
+      ) {
+        return (currentListing as any).data.listing[key];
+      }
+
+      return defaultValue;
+    },
+    [currentListing]
+  );
+
   // Ініціалізація форми даними з поточного оголошення
   useEffect(() => {
-    if (currentListing && !isInitialized) {
-      setFormData({
-        title: currentListing.title,
-        description: currentListing.description,
-        price: currentListing.price.toString(),
-        categoryId: currentListing.categoryId?.toString() || "",
-        location: currentListing.location,
-        images: currentListing.images || [],
-      });
+    console.log("currentListing в EditListingPage:", currentListing);
 
-      setImagePreviewUrls(currentListing.images || []);
-      setIsInitialized(true);
+    if (currentListing && !isInitialized) {
+      try {
+        // Безпечно отримуємо значення з різних можливих структур
+        const price = getListingValue("price", "");
+        const currency = getListingValue("currency", "UAH");
+        const images = getListingValue("images", []);
+        const categoryId = getListingValue("categoryId", "");
+
+        console.log("Отримані дані:", {
+          price,
+          currency,
+          images,
+          categoryId,
+        });
+
+        // Визначаємо правильне значення currency
+        let validCurrency: "UAH" | "USD" | "EUR" = "UAH";
+        if (currency === "USD") validCurrency = "USD";
+        if (currency === "EUR") validCurrency = "EUR";
+
+        setFormData({
+          title: getListingValue("title", ""),
+          description: getListingValue("description", ""),
+          price: price !== null && price !== undefined ? String(price) : "",
+          currency: validCurrency,
+          categoryId: categoryId ? String(categoryId) : "",
+          location: getListingValue("location", ""),
+          images: Array.isArray(images) ? images : [],
+        });
+
+        // Безпечне встановлення зображень для превью
+        if (Array.isArray(images)) {
+          setImagePreviewUrls(images.filter((img) => typeof img === "string"));
+        }
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Помилка при ініціалізації форми:", error);
+      }
     }
-  }, [currentListing, isInitialized]);
+  }, [currentListing, isInitialized, getListingValue]);
+
+  // Перевірка на відсутність даних після завантаження
+  useEffect(() => {
+    // Якщо дані завантажилися, але оголошення немає
+    if (!isLoading && currentListing === null && id && isInitialized) {
+      console.error("Оголошення не знайдено:", id);
+      navigate("/not-found", { replace: true });
+    }
+  }, [currentListing, isLoading, id, navigate, isInitialized]);
 
   // Обробник зміни полів форми
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     const { name, value } = e.target;
     setFormData({
@@ -176,7 +255,8 @@ const EditListingPage = () => {
       newErrors.location = "Введіть місце розташування";
     }
 
-    if (formData.images.length === 0) {
+    // Зробимо необов'язковим, якщо редагуємо і вже є зображення
+    if (formData.images.length === 0 && !id) {
       newErrors.images = "Завантажте хоча б одне зображення";
     }
 
@@ -187,6 +267,7 @@ const EditListingPage = () => {
   // Обробник відправки форми
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Форма для відправки:", formData);
 
     if (!validateForm() || !id) {
       return;
@@ -194,33 +275,48 @@ const EditListingPage = () => {
 
     setIsSubmitting(true);
 
-    // Створення об'єкту FormData для відправки файлів
-    const submitData = new FormData();
-    submitData.append("title", formData.title);
-    submitData.append("description", formData.description);
-    submitData.append("price", formData.price);
-    submitData.append("categoryId", formData.categoryId);
-    submitData.append("location", formData.location);
+    try {
+      // Створення об'єкту FormData для відправки файлів
+      const submitData = new FormData();
+      submitData.append("title", formData.title);
+      submitData.append("description", formData.description);
+      submitData.append("price", formData.price);
+      submitData.append("currency", formData.currency);
+      submitData.append("categoryId", formData.categoryId);
+      submitData.append("location", formData.location);
 
-    // Додавання зображень
-    formData.images.forEach((image, index) => {
-      if (image instanceof File) {
-        submitData.append("images", image);
-      } else if (typeof image === "string") {
-        // Якщо це існуюче зображення (URL), додаємо його як окреме поле
-        submitData.append("existingImages", image);
+      // Додавання зображень
+      let fileCount = 0;
+      formData.images.forEach((image) => {
+        if (image instanceof File) {
+          submitData.append("images", image);
+          fileCount++;
+        } else if (typeof image === "string") {
+          // Якщо це існуюче зображення (URL), додаємо його як окреме поле
+          submitData.append("existingImages", image);
+        }
+      });
+
+      console.log(
+        `Підготовлено ${fileCount} нових файлів та ${formData.images.length - fileCount} існуючих зображень`
+      );
+
+      const resultAction = await dispatch(
+        updateListing({ id: parseInt(id), formData: submitData })
+      );
+
+      if (updateListing.fulfilled.match(resultAction)) {
+        // Перехід на сторінку оголошення
+        navigate(`/listings/${id}`);
+      } else {
+        console.error("Помилка при оновленні:", resultAction.error);
+        alert("Виникла помилка при збереженні оголошення");
       }
-    });
-
-    const resultAction = await dispatch(
-      updateListing({ id: parseInt(id), formData: submitData }),
-    );
-
-    setIsSubmitting(false);
-
-    if (updateListing.fulfilled.match(resultAction)) {
-      // Перехід на сторінку оголошення
-      navigate(`/listings/${id}`);
+    } catch (error) {
+      console.error("Помилка при відправці форми:", error);
+      alert("Виникла помилка при збереженні оголошення");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -234,7 +330,7 @@ const EditListingPage = () => {
       "image/webp",
     ];
     const imageFiles = files.filter((file) =>
-      validImageTypes.includes(file.type),
+      validImageTypes.includes(file.type)
     );
 
     if (imageFiles.length === 0) {
@@ -348,23 +444,53 @@ const EditListingPage = () => {
                     htmlFor="price"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Ціна (грн) *
+                    Ціна *
                   </label>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="Наприклад: 1000000"
-                    min="0"
-                    step="1"
-                    className={`w-full px-4 py-2 border ${
-                      errors.price ? "border-red-500" : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                  />
+                  <div className="flex">
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="Наприклад: 1000000"
+                      min="0"
+                      step="1"
+                      className={`w-3/4 px-4 py-2 border ${
+                        errors.price ? "border-red-500" : "border-gray-300"
+                      } rounded-l-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    />
+                    <div className="relative w-1/4">
+                      <select
+                        id="currency"
+                        name="currency"
+                        value={formData.currency}
+                        onChange={handleInputChange}
+                        className="appearance-none h-full px-3 py-2 border-l-0 border border-gray-300 rounded-r-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 w-full"
+                      >
+                        <option value="UAH">
+                          {getCurrencySymbol("UAH")} UAH
+                        </option>
+                        <option value="USD">
+                          {getCurrencySymbol("USD")} USD
+                        </option>
+                        <option value="EUR">
+                          {getCurrencySymbol("EUR")} EUR
+                        </option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronDown size={18} className="text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
                   {errors.price && (
                     <p className="mt-1 text-sm text-red-500">{errors.price}</p>
+                  )}
+                  {formData.price && !errors.price && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      Буде відображатися як:{" "}
+                      {formatPriceWithSymbol(formData.price, formData.currency)}
+                    </div>
                   )}
                 </div>
               </div>
@@ -440,7 +566,7 @@ const EditListingPage = () => {
                 {/* Завантаження зображень */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Фотографії *
+                    Фотографії {!id && "*"}
                   </label>
 
                   <div

@@ -122,7 +122,11 @@ export const listingsAPI = {
   delete: (id: number) => {
     return api.delete(`/listings/${id}`);
   },
+
+   getFeatured: () => api.get("/listings/featured"),
 };
+
+
 
 // API для категорій
 export const categoriesAPI = {
