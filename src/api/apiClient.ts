@@ -1,4 +1,12 @@
 import axios from "axios";
+import { getToken, removeToken, setToken } from "../utils/auth"; // Імпортуємо функції для роботи з токенами
+
+// Розширюємо тип AxiosRequestConfig для підтримки skipAuthRefresh
+declare module "axios" {
+  interface AxiosRequestConfig {
+    skipAuthRefresh?: boolean;
+  }
+}
 
 // Створення екземпляру axios з базовими налаштуваннями
 const api = axios.create({
@@ -11,33 +19,74 @@ const api = axios.create({
 // Додавання перехоплювача запитів для автоматичного додавання токену
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Додавання перехоплювача відповідей для обробки помилок
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Перевірка статусу 401 (Unauthorized)
-    if (error.response && error.response.status === 401) {
-      // Видаляємо токен і перенаправляємо на сторінку входу
-      localStorage.removeItem("token");
+  (response) => response,
+  async (error) => {
+    console.error("API Error:", error);
 
-      // Перевіряємо, що ми не на сторінці входу, щоб уникнути циклічних перенаправлень
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+    // // Важливо: НЕ виходимо автоматично при помилці у відповіді
+    // if (error.response) {
+    //   // Помилка авторизації, але не виходимо при редагуванні
+    //   if (error.response.status === 401) {
+    //     console.error("Auth error 401, but not logging out automatically");
+
+    //     // Записуємо URL поточної сторінки, якщо не редагування
+    //     if (!window.location.pathname.includes("edit")) {
+    //       removeToken(); // Видаляємо токен тільки для інших операцій
+    //       // Перенаправляємо ТІЛЬКИ для інших операцій
+    //       window.location.href = "/login?expired=true";
+    //     }
+    //   }
+    // }
+    // Пропуск запитів, що помічені для пропуску оновлення токена
+    if (error.config?.skipAuthRefresh) {
+      return Promise.reject(error);
+    }
+
+    // Якщо це помилка 401 і не запит на оновлення токена
+    if (
+      error.response?.status === 401 &&
+      !error.config.url.includes("/auth/refresh")
+    ) {
+      console.error("Auth error 401");
+
+      // Записуємо URL поточної сторінки
+      const currentPath = window.location.pathname;
+
+      // Якщо це сторінка редагування, не виходимо автоматично
+      if (currentPath.includes("/edit") || currentPath.includes("/create")) {
+        console.log("На сторінці редагування - залишаємось на сторінці");
+
+        try {
+          // Спробуємо оновити токен
+          const response = await authAPI.refreshToken();
+          if (response.data?.accessToken) {
+            setToken(response.data.accessToken);
+
+            // Повторюємо оригінальний запит з новим токеном
+            error.config.headers.Authorization = `Bearer ${response.data.accessToken}`;
+            return api(error.config);
+          }
+        } catch (refreshError) {
+          console.error("Failed to refresh token:", refreshError);
+        }
+      } else {
+        // На інших сторінках виходимо і перенаправляємо на логін
+        removeToken();
+        window.location.href = "/login?expired=true";
       }
     }
+
     return Promise.reject(error);
   }
 );
@@ -82,6 +131,16 @@ export const authAPI = {
       newPassword,
     });
   },
+  refreshToken: () => {
+    return api.post(
+      "/auth/refresh",
+      {},
+      {
+        // Спеціальний флаг, щоб уникнути рекурсії при оновленні токенів
+        skipAuthRefresh: true,
+      }
+    );
+  },
 };
 
 // API для оголошень
@@ -107,26 +166,41 @@ export const listingsAPI = {
     return api.post("/listings", formData);
   },
 
-  update: (
-    id: number,
-    formData: {
-      name?: string;
-      description?: string;
-      price?: number;
-      categoryId?: number;
-    }
-  ) => {
-    return api.put(`/listings/${id}`, formData);
+  update: (id: number, formData: FormData) => {
+    // ВАЖЛИВО: НЕ встановлюйте заголовок Content-Type при відправці FormData
+    // Браузер автоматично встановить правильний multipart/form-data з boundary
+    return api.put(`/listings/${id}`, formData, {
+      headers: {
+        // Видаліть Content-Type, якщо він був встановлений
+      },
+      // Додаємо додаткові опції для відстеження прогресу (опціонально)
+      onUploadProgress: (progressEvent) => {
+        console.log(
+          "Прогрес завантаження:",
+          Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1))
+        );
+      },
+    });
   },
+
+  // update: (
+  //   id: number,
+  //   formData: {
+  //     name?: string;
+  //     description?: string;
+  //     price?: number;
+  //     categoryId?: number;
+  //   }
+  // ) => {
+  //   return api.put(`/listings/${id}`, formData);
+  // },
 
   delete: (id: number) => {
     return api.delete(`/listings/${id}`);
   },
 
-   getFeatured: () => api.get("/listings/featured"),
+  getFeatured: () => api.get("/listings/featured"),
 };
-
-
 
 // API для категорій
 export const categoriesAPI = {

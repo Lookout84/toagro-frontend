@@ -30,7 +30,7 @@ const ListingDetailsPage = () => {
   const { isAuthenticated, user } = useAuth();
 
   const { currentListing, similarListings, isLoading } = useAppSelector(
-    (state) => state.listing,
+    (state) => state.listing
   );
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -95,7 +95,7 @@ const ListingDetailsPage = () => {
       setActiveImageIndex(
         (prev) =>
           (prev - 1 + currentListing.images.length) %
-          currentListing.images.length,
+          currentListing.images.length
       );
     }
   };
@@ -127,7 +127,7 @@ const ListingDetailsPage = () => {
       await chatAPI.sendMessage(
         currentListing.user.id,
         messageText,
-        currentListing.id,
+        currentListing.id
       );
 
       setMessageText("");
@@ -181,7 +181,11 @@ const ListingDetailsPage = () => {
   };
 
   // Перевірка, чи оголошення належить поточному користувачу
-  const isOwner = user && currentListing && user.id === currentListing.user.id;
+  const isOwner =
+    user &&
+    currentListing &&
+    currentListing.user &&
+    user.id === currentListing.user.id;
 
   if (isLoading) {
     return <Loader fullScreen />;

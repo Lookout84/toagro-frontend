@@ -6,6 +6,7 @@ import { fetchCategories } from "../store/catalogSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import Loader from "../components/common/Loader";
 import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
+import { ensureFreshToken } from "../utils/tokenRefresh";
 
 interface FormData {
   title: string;
@@ -276,6 +277,10 @@ const EditListingPage = () => {
     setIsSubmitting(true);
 
     try {
+      const tokenRefreshed = await ensureFreshToken();
+      if (!tokenRefreshed) {
+        console.warn("Не вдалося оновити токен, але продовжуємо спробу");
+      }
       // Створення об'єкту FormData для відправки файлів
       const submitData = new FormData();
       submitData.append("title", formData.title);
@@ -286,14 +291,33 @@ const EditListingPage = () => {
       submitData.append("location", formData.location);
 
       // Додавання зображень
+      // let fileCount = 0;
+      // formData.images.forEach((image) => {
+      //   if (image instanceof File) {
+      //     submitData.append("images", image);
+      //     fileCount++;
+      //   } else if (typeof image === "string") {
+      //     // Якщо це існуюче зображення (URL), додаємо його як окреме поле
+      //     submitData.append("existingImages", image);
+      //   }
+      // });
+
       let fileCount = 0;
-      formData.images.forEach((image) => {
+      formData.images.forEach((image, index) => {
         if (image instanceof File) {
+          console.log(
+            `Додаємо файл ${index}: ${image.name} (${image.type}, ${image.size} байт)`
+          );
           submitData.append("images", image);
           fileCount++;
         } else if (typeof image === "string") {
-          // Якщо це існуюче зображення (URL), додаємо його як окреме поле
+          // URL існуючого зображення
+          console.log(
+            `Додаємо існуюче зображення ${index}: ${image.substring(0, 30)}...`
+          );
           submitData.append("existingImages", image);
+        } else {
+          console.warn(`Невідомий тип зображення ${index}:`, image);
         }
       });
 

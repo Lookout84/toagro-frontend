@@ -198,48 +198,97 @@ export function formatPrice(price: number, currency: string = "UAH"): string {
  * @param currency - код валюти (UAH, USD, EUR)
  * @returns форматована ціна з символом валюти
  */
-export function formatPriceWithSymbol(
-  price: number | string,
-  currency?: string
-): string {
-  console.log("formatPriceWithSymbol called with:", price, currency);
+// export function formatPriceWithSymbol(
+//   price: number | string,
+//   currency?: string
+// ): string {
+//   console.log("formatPriceWithSymbol called with:", price, currency);
 
-  // Переконуємось, що price є числом
+//   // Переконуємось, що price є числом
+//   const numericPrice = typeof price === "string" ? parseFloat(price) : price;
+//   if (isNaN(numericPrice)) {
+//     console.log("Invalid price");
+//     return "Ціна не вказана";
+//   }
+
+//   console.log("Currency before normalization:", currency);
+
+//   // ВИПРАВЛЕНО: Перевірка на undefined/null перед нормалізацією
+//   const normalizedCurrency = currency ? String(currency).toUpperCase() : "UAH";
+
+//   console.log("Normalized currency:", normalizedCurrency);
+
+//   // Форматуємо число з роздільниками розрядів
+//   const formattedNumber = new Intl.NumberFormat("uk-UA", {
+//     minimumFractionDigits: 0,
+//     maximumFractionDigits: 0,
+//   }).format(numericPrice);
+
+//   // Отримуємо символ валюти
+//   let currencySymbol;
+//   switch (normalizedCurrency) {
+//     case "USD":
+//       currencySymbol = "$";
+//       break;
+//     case "EUR":
+//       currencySymbol = "€";
+//       break;
+//     case "UAH":
+//     default:
+//       currencySymbol = "₴";
+//       break;
+//   }
+
+//   console.log("Final result:", `${formattedNumber} ${currencySymbol}`);
+
+//   return `${formattedNumber} ${currencySymbol}`;
+// }
+/**
+ * Форматує числове значення ціни з символом валюти
+ */
+export const formatPriceWithSymbol = (
+  price: string | number,
+  currencyCode = "UAH"
+): string => {
+  if (price === null || price === undefined) return "";
+
+  // Нормалізуємо код валюти
+  const normalizedCurrency = normalizeCurrency(currencyCode);
+
+  // Перетворюємо price в число, якщо це рядок
   const numericPrice = typeof price === "string" ? parseFloat(price) : price;
-  if (isNaN(numericPrice)) {
-    console.log("Invalid price");
-    return "Ціна не вказана";
+
+  // Перевіряємо на NaN
+  if (isNaN(numericPrice)) return "";
+
+  try {
+    // Використовуємо Intl.NumberFormat для правильного форматування
+    return new Intl.NumberFormat("uk-UA", {
+      style: "currency",
+      currency: normalizedCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numericPrice);
+  } catch (error) {
+    console.error(`Помилка форматування ціни ${price} ${currencyCode}:`, error);
+    // Запасний варіант форматування
+    return `${numericPrice.toLocaleString("uk-UA")} ${getCurrencySymbol(normalizedCurrency)}`;
+  }
+};
+
+/**
+ * Нормалізує код валюти до стандартного формату
+ */
+const normalizeCurrency = (currency?: string): string => {
+  if (!currency) return "UAH";
+
+  // Нормалізуємо та конвертуємо до верхнього регістру
+  const normalized = currency.trim().toUpperCase();
+
+  // Перевіряємо допустимі валюти
+  if (["UAH", "USD", "EUR"].includes(normalized)) {
+    return normalized;
   }
 
-  console.log("Currency before normalization:", currency);
-
-  // ВИПРАВЛЕНО: Перевірка на undefined/null перед нормалізацією
-  const normalizedCurrency = currency ? String(currency).toUpperCase() : "UAH";
-
-  console.log("Normalized currency:", normalizedCurrency);
-
-  // Форматуємо число з роздільниками розрядів
-  const formattedNumber = new Intl.NumberFormat("uk-UA", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numericPrice);
-
-  // Отримуємо символ валюти
-  let currencySymbol;
-  switch (normalizedCurrency) {
-    case "USD":
-      currencySymbol = "$";
-      break;
-    case "EUR":
-      currencySymbol = "€";
-      break;
-    case "UAH":
-    default:
-      currencySymbol = "₴";
-      break;
-  }
-
-  console.log("Final result:", `${formattedNumber} ${currencySymbol}`);
-
-  return `${formattedNumber} ${currencySymbol}`;
-}
+  return "UAH"; // За замовчуванням
+};

@@ -94,6 +94,8 @@ export const fetchUserListings = createAsyncThunk(
   }
 );
 
+// Створення оголошення
+
 export const createListing = createAsyncThunk(
   "listings/create",
   async (listingData: any, { rejectWithValue }) => {
@@ -112,18 +114,62 @@ export const createListing = createAsyncThunk(
 export const updateListing = createAsyncThunk(
   "listing/updateListing",
   async (
-    { id, formData }: { id: number; formData: any },
-    { rejectWithValue }
+    { id, formData }: { id: number; formData: FormData },
+    { rejectWithValue, dispatch }
   ) => {
     try {
+      console.log(`Оновлення оголошення #${id} із ${formData.getAll('images').length} зображеннями`);
+      
+      // Для відлагодження FormData
+      if (process.env.NODE_ENV === 'development') {
+        console.log("FormData contents:");
+        for (const pair of formData.entries()) {
+          console.log(pair[0], pair[1]);
+        }
+      }
+
       const response = await listingsAPI.update(id, formData);
-      toast.success("Оголошення успішно оновлено!");
-      return response.data.data.listing;
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "Помилка оновлення оголошення";
-      toast.error(errorMessage);
-      return rejectWithValue(errorMessage);
+      console.log("Відповідь сервера:", response.data);
+      
+      // Оновлюємо дані оголошення після успішного оновлення
+      dispatch(setCurrentListing(response.data.data || response.data));
+      
+      return response.data.data || response.data;
+    } catch (error: unknown) {
+      console.error("Помилка при оновленні оголошення:", error);
+      
+      // Додаємо більше інформації про помилку
+      let errorMessage = "Помилка оновлення оголошення";
+      
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const responseData = error.response.data as { message?: string; error?: string };
+        if (responseData?.message) {
+          errorMessage = responseData.message;
+        } else if (responseData?.error) {
+          errorMessage = responseData.error;
+        }
+        
+        // Виводимо інформацію про статус для налагодження
+        const statusCode = 'status' in error.response ? error.response.status : 'unknown';
+        console.error(`Статус відповіді: ${statusCode}`, responseData);
+        
+        // Особлива обробка для помилки авторизації
+        if ('status' in error.response && error.response.status === 401) {
+          return rejectWithValue({
+            message: "Авторизація закінчилась. Будь ласка, увійдіть знову, але НЕ втратьте дані.",
+            authError: true
+          });
+        }
+      }
+      
+      return rejectWithValue({ message: errorMessage });
     }
   }
 );
@@ -151,6 +197,9 @@ const listingSlice = createSlice({
   reducers: {
     clearCurrentListing: (state) => {
       state.currentListing = null;
+    },
+    setCurrentListing: (state, action: PayloadAction<Listing>) => {
+      state.currentListing = action.payload;
     },
     setSimilarListings: (state, action: PayloadAction<Listing[]>) => {
       state.similarListings = action.payload;
@@ -247,8 +296,8 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       });
-  },
+  }
 });
 
-export const { clearCurrentListing, setSimilarListings } = listingSlice.actions;
+export const { clearCurrentListing, setCurrentListing, setSimilarListings } = listingSlice.actions;
 export default listingSlice.reducer;
