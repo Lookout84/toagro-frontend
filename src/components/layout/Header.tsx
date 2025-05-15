@@ -354,14 +354,14 @@ const Header = () => {
             </div>
 
             <Link
-              to="/catalog?category=new"
+              to="/new"
               className="hover:text-green-200"
               onClick={handleNavigation}
             >
               Нова техніка
             </Link>
             <Link
-              to="/catalog?category=used"
+              to="/used"
               className="hover:text-green-200"
               onClick={handleNavigation}
             >

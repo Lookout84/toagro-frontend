@@ -12,6 +12,8 @@ const ListingDetailsPage = lazy(() => import("../pages/ListingDetailsPage"));
 const CreateListingPage = lazy(() => import("../pages/CreateListingPage"));
 const EditListingPage = lazy(() => import("../pages/EditListingPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+const NewListingsPage = lazy(() => import("../pages/NewListingsPage"));
+const UsedListingsPage = lazy(() => import("../pages/UsedListingsPage"));
 
 // Сторінки авторизації
 const LoginPage = lazy(() => import("../pages/LoginPage"));
@@ -22,16 +24,30 @@ const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 
 // Сторінки профілю користувача
 const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
-const UserListingsPage = lazy(() => import("../pages/profile/UserListingsPage"));
-const UserProfileSettingsPage = lazy(() => import("../pages/profile/UserProfileSettingsPage"));
-const UserPasswordChangePage = lazy(() => import("../pages/profile/UserPasswordChangePage"));
-const UserNotificationsPage = lazy(() => import("../pages/profile/UserNotificationsPage"));
-const CompareListingsPage = lazy(() => import("../pages/profile/CompareListingsPage"));
-const UserTransactionsPage = lazy(() => import("../pages/profile/UserTransactionsPage"));
+const UserListingsPage = lazy(
+  () => import("../pages/profile/UserListingsPage")
+);
+const UserProfileSettingsPage = lazy(
+  () => import("../pages/profile/UserProfileSettingsPage")
+);
+const UserPasswordChangePage = lazy(
+  () => import("../pages/profile/UserPasswordChangePage")
+);
+const UserNotificationsPage = lazy(
+  () => import("../pages/profile/UserNotificationsPage")
+);
+const CompareListingsPage = lazy(
+  () => import("../pages/profile/CompareListingsPage")
+);
+const UserTransactionsPage = lazy(
+  () => import("../pages/profile/UserTransactionsPage")
+);
 
 // Сторінки чату
 const ChatPage = lazy(() => import("../pages/ChatPage"));
-const ChatConversationPage = lazy(() => import("../pages/ChatConversationPage"));
+const ChatConversationPage = lazy(
+  () => import("../pages/ChatConversationPage")
+);
 
 // Сторінки оплати
 const PaymentPage = lazy(() => import("../pages/PaymentPage"));
@@ -39,19 +55,43 @@ const PaymentSuccessPage = lazy(() => import("../pages/PaymentSuccessPage"));
 const PaymentFailurePage = lazy(() => import("../pages/PaymentFailurePage"));
 
 // Сторінки адмін-панелі
-const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminDashboardPage = lazy(
+  () => import("../pages/admin/AdminDashboardPage")
+);
 const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
-const AdminUserEditPage = lazy(() => import("../pages/admin/AdminUserEditPage"));
-const AdminListingsPage = lazy(() => import("../pages/admin/AdminListingsPage"));
-const AdminCategoriesPage = lazy(() => import("../pages/admin/AdminCategoriesPage"));
-const AdminPaymentsPage = lazy(() => import("../pages/admin/AdminPaymentsPage"));
-const AdminNotificationsPage = lazy(() => import("../pages/admin/AdminNotificationsPage"));
-const AdminCampaignsPage = lazy(() => import("../pages/admin/AdminCampaignsPage"));
-const AdminCampaignDetailsPage = lazy(() => import("../pages/admin/AdminCampaignDetailsPage"));
-const AdminCreateCampaignPage = lazy(() => import("../pages/admin/AdminCreateCampaignPage"));
-const AdminEditCampaignPage = lazy(() => import("../pages/admin/AdminEditCampaignPage"));
-const AdminScheduledTasksPage = lazy(() => import("../pages/admin/AdminScheduledTasksPage"));
-const AdminSystemHealthPage = lazy(() => import("../pages/admin/AdminSystemHealthPage"));
+const AdminUserEditPage = lazy(
+  () => import("../pages/admin/AdminUserEditPage")
+);
+const AdminListingsPage = lazy(
+  () => import("../pages/admin/AdminListingsPage")
+);
+const AdminCategoriesPage = lazy(
+  () => import("../pages/admin/AdminCategoriesPage")
+);
+const AdminPaymentsPage = lazy(
+  () => import("../pages/admin/AdminPaymentsPage")
+);
+const AdminNotificationsPage = lazy(
+  () => import("../pages/admin/AdminNotificationsPage")
+);
+const AdminCampaignsPage = lazy(
+  () => import("../pages/admin/AdminCampaignsPage")
+);
+const AdminCampaignDetailsPage = lazy(
+  () => import("../pages/admin/AdminCampaignDetailsPage")
+);
+const AdminCreateCampaignPage = lazy(
+  () => import("../pages/admin/AdminCreateCampaignPage")
+);
+const AdminEditCampaignPage = lazy(
+  () => import("../pages/admin/AdminEditCampaignPage")
+);
+const AdminScheduledTasksPage = lazy(
+  () => import("../pages/admin/AdminScheduledTasksPage")
+);
+const AdminSystemHealthPage = lazy(
+  () => import("../pages/admin/AdminSystemHealthPage")
+);
 const AdminQueuesPage = lazy(() => import("../pages/admin/AdminQueuesPage"));
 
 const AppRoutes = () => {
@@ -63,6 +103,8 @@ const AppRoutes = () => {
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/catalog/:categorySlug" element={<CatalogPage />} />
         <Route path="/listings/:id" element={<ListingDetailsPage />} />
+        <Route path="/new" element={<NewListingsPage />} />
+        <Route path="/used" element={<UsedListingsPage />} />
 
         {/* Маршрути авторизації */}
         <Route path="/login" element={<LoginPage />} />

@@ -1,17 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
-import { fetchCategories, fetchListings, Listing } from "../store/catalogSlice";
+import { fetchCategories, fetchListings, Listing, Category } from "../store/catalogSlice";
 import ListingCard from "../components/ui/ListingCard";
 import { ChevronRight, Tractor, Settings, Tag, Combine } from "lucide-react";
-
-// export interface Category {
-//   id: string;
-//   name: string;
-//   slug: string;
-//   description: string;
-//   favorite?: boolean;
-// }
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
@@ -103,9 +95,8 @@ const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.length > 0
             ? categories
-                .filter((category) => category.favorite === true)
                 .slice(0, 4)
-                .map((category) => (
+                .map((category: Category) => (
                   <Link
                     key={category.id}
                     to={`/catalog?category=${category.slug}`}
@@ -125,7 +116,7 @@ const HomePage = () => {
             : // Показуємо плейсхолдери під час завантаження
               Array(4)
                 .fill(null)
-                .map((_, index) => (
+                .map((_, index: number) => (
                   <div
                     key={index}
                     className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse"
