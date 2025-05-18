@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchListingById, updateListing } from "../store/listingSlice";
 import { fetchCategories } from "../store/catalogSlice";
+import { fetchRegions, fetchCommunities, fetchLocations } from "../store/locationSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import Loader from "../components/common/Loader";
 import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
@@ -14,16 +15,20 @@ interface FormData {
   price: string;
   currency: "UAH" | "USD" | "EUR";
   categoryId: string;
-  location: string;
+  regionId: string;
+  communityId: string;
+  locationId: string;
   images: (File | string)[];
 }
 
 interface FormErrors {
-  title?: string | undefined;
-  description?: string | undefined;
-  price?: string | undefined;
-  categoryId?: string | undefined;
-  location?: string | undefined;
+  title?: string;
+  description?: string;
+  price?: string;
+  categoryId?: string;
+  regionId?: string;
+  communityId?: string;
+  locationId?: string;
   images?: string | undefined;
 }
 
@@ -32,12 +37,9 @@ const EditListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { currentListing, isLoading } = useAppSelector(
-    (state) => state.listing
-  );
-  const { categories, status: categoriesStatus } = useAppSelector(
-    (state) => state.catalog
-  );
+  const { currentListing, isLoading } = useAppSelector((state) => state.listing);
+  const { categories, status: categoriesStatus } = useAppSelector((state) => state.catalog);
+  const { regions, communities, locations, status: locationStatus } = useAppSelector((state) => state.locations);
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -45,7 +47,9 @@ const EditListingPage = () => {
     price: "",
     currency: "UAH",
     categoryId: "",
-    location: "",
+    regionId: "",
+    communityId: "",
+    locationId: "",
     images: [],
   });
 
@@ -55,48 +59,26 @@ const EditListingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Завантаження категорій та поточного оголошення
+  // Завантаження категорій, регіонів та поточного оголошення
   useEffect(() => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
-
+    if (!regions || regions.length === 0) {
+      dispatch(fetchRegions());
+    }
     if (id) {
-      console.log("Завантаження оголошення ID:", id);
       dispatch(fetchListingById(parseInt(id)));
     }
-  }, [dispatch, id, categories.length]);
+  }, [dispatch, id, categories.length, regions, regions?.length]);
 
-  // Виправлення: Перенесено функцію getListingValue за межі useEffect
-  // та зроблено її через useCallback для оптимізації
+  // Витягуємо значення з currentListing
   const getListingValue = useCallback(
-    (key: string, defaultValue: string | number | string[] | null = "") => {
+    (key: string, defaultValue: any = "") => {
       if (!currentListing) return defaultValue;
-
-      // Випадок 1: поле існує безпосередньо в currentListing
-      if (key in currentListing) {
-        if (key in currentListing) {
-          return currentListing[key as keyof typeof currentListing];
-        }
-      }
-
-      // Випадок 2: поле вкладене в data
-      if (
-        currentListing &&
-        (currentListing as any).data &&
-        (currentListing as any).data[key] !== undefined
-      ) {
-        return (currentListing as any)?.data?.[key];
-      }
-
-      // Випадок 3: поле вкладене в data.listing
-      if (
-        (currentListing as any)?.data?.listing &&
-        (currentListing as any).data.listing[key] !== undefined
-      ) {
-        return (currentListing as any).data.listing[key];
-      }
-
+      if (key in currentListing) return currentListing[key as keyof typeof currentListing];
+      if ((currentListing as any)?.data?.[key] !== undefined) return (currentListing as any).data[key];
+      if ((currentListing as any)?.data?.listing?.[key] !== undefined) return (currentListing as any).data.listing[key];
       return defaultValue;
     },
     [currentListing]
@@ -104,24 +86,16 @@ const EditListingPage = () => {
 
   // Ініціалізація форми даними з поточного оголошення
   useEffect(() => {
-    console.log("currentListing в EditListingPage:", currentListing);
-
     if (currentListing && !isInitialized) {
       try {
-        // Безпечно отримуємо значення з різних можливих структур
         const price = getListingValue("price", "");
         const currency = getListingValue("currency", "UAH");
         const images = getListingValue("images", []);
         const categoryId = getListingValue("categoryId", "");
+        const regionId = getListingValue("regionId", "");
+        const communityId = getListingValue("communityId", "");
+        const locationId = getListingValue("locationId", "");
 
-        console.log("Отримані дані:", {
-          price,
-          currency,
-          images,
-          categoryId,
-        });
-
-        // Визначаємо правильне значення currency
         let validCurrency: "UAH" | "USD" | "EUR" = "UAH";
         if (currency === "USD") validCurrency = "USD";
         if (currency === "EUR") validCurrency = "EUR";
@@ -132,11 +106,13 @@ const EditListingPage = () => {
           price: price !== null && price !== undefined ? String(price) : "",
           currency: validCurrency,
           categoryId: categoryId ? String(categoryId) : "",
-          location: getListingValue("location", ""),
+          regionId: regionId ? String(regionId) : "",
+          communityId: communityId ? String(communityId) : "",
+          locationId: locationId ? String(locationId) : "",
           images: Array.isArray(images) ? images : [],
         });
 
-        // Безпечне встановлення зображень для превью
+        // Прев'ю тільки для string (url)
         if (Array.isArray(images)) {
           setImagePreviewUrls(images.filter((img) => typeof img === "string"));
         }
@@ -148,28 +124,53 @@ const EditListingPage = () => {
     }
   }, [currentListing, isInitialized, getListingValue]);
 
+  // Підвантаження громад при виборі області
+  useEffect(() => {
+    if (formData.regionId) {
+      dispatch(fetchCommunities(formData.regionId));
+    }
+  }, [dispatch, formData.regionId]);
+
+  // Підвантаження населених пунктів при виборі громади
+  useEffect(() => {
+    if (formData.communityId) {
+      dispatch(fetchLocations(formData.communityId));
+    }
+  }, [dispatch, formData.communityId]);
+
   // Перевірка на відсутність даних після завантаження
   useEffect(() => {
-    // Якщо дані завантажилися, але оголошення немає
     if (!isLoading && currentListing === null && id && isInitialized) {
-      console.error("Оголошення не знайдено:", id);
       navigate("/not-found", { replace: true });
     }
   }, [currentListing, isLoading, id, navigate, isInitialized]);
 
   // Обробник зміни полів форми
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
 
-    // Очищення помилки при зміні поля
+    if (name === "regionId") {
+      setFormData({
+        ...formData,
+        regionId: value,
+        communityId: "",
+        locationId: "",
+      });
+    } else if (name === "communityId") {
+      setFormData({
+        ...formData,
+        communityId: value,
+        locationId: "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+
     if (errors[name as keyof FormErrors]) {
       setErrors({
         ...errors,
@@ -182,7 +183,6 @@ const EditListingPage = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
     handleFiles(Array.from(files));
   };
 
@@ -231,35 +231,16 @@ const EditListingPage = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = "Введіть назву оголошення";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "Введіть опис оголошення";
-    }
-
-    if (!formData.price.trim()) {
-      newErrors.price = "Введіть ціну";
-    } else if (
-      isNaN(parseFloat(formData.price)) ||
-      parseFloat(formData.price) <= 0
-    ) {
+    if (!formData.title.trim()) newErrors.title = "Введіть назву оголошення";
+    if (!formData.description.trim()) newErrors.description = "Введіть опис оголошення";
+    if (!formData.price.trim()) newErrors.price = "Введіть ціну";
+    else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0)
       newErrors.price = "Введіть коректну ціну";
-    }
-
-    if (!formData.categoryId) {
-      newErrors.categoryId = "Виберіть категорію";
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = "Введіть місце розташування";
-    }
-
-    // Зробимо необов'язковим, якщо редагуємо і вже є зображення
-    if (formData.images.length === 0 && !id) {
-      newErrors.images = "Завантажте хоча б одне зображення";
-    }
+    if (!formData.categoryId) newErrors.categoryId = "Виберіть категорію";
+    if (!formData.regionId) newErrors.regionId = "Виберіть область";
+    if (!formData.communityId) newErrors.communityId = "Виберіть громаду";
+    if (!formData.locationId) newErrors.locationId = "Виберіть населений пункт";
+    if (formData.images.length === 0 && !id) newErrors.images = "Завантажте хоча б одне зображення";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -268,7 +249,6 @@ const EditListingPage = () => {
   // Обробник відправки форми
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Форма для відправки:", formData);
 
     if (!validateForm() || !id) {
       return;
@@ -288,56 +268,28 @@ const EditListingPage = () => {
       submitData.append("price", formData.price);
       submitData.append("currency", formData.currency);
       submitData.append("categoryId", formData.categoryId);
-      submitData.append("location", formData.location);
+      submitData.append("regionId", formData.regionId);
+      submitData.append("communityId", formData.communityId);
+      submitData.append("locationId", formData.locationId);
 
-      // Додавання зображень
-      // let fileCount = 0;
-      // formData.images.forEach((image) => {
-      //   if (image instanceof File) {
-      //     submitData.append("images", image);
-      //     fileCount++;
-      //   } else if (typeof image === "string") {
-      //     // Якщо це існуюче зображення (URL), додаємо його як окреме поле
-      //     submitData.append("existingImages", image);
-      //   }
-      // });
-
-      let fileCount = 0;
       formData.images.forEach((image, index) => {
         if (image instanceof File) {
-          console.log(
-            `Додаємо файл ${index}: ${image.name} (${image.type}, ${image.size} байт)`
-          );
           submitData.append("images", image);
-          fileCount++;
         } else if (typeof image === "string") {
-          // URL існуючого зображення
-          console.log(
-            `Додаємо існуюче зображення ${index}: ${image.substring(0, 30)}...`
-          );
           submitData.append("existingImages", image);
-        } else {
-          console.warn(`Невідомий тип зображення ${index}:`, image);
         }
       });
-
-      console.log(
-        `Підготовлено ${fileCount} нових файлів та ${formData.images.length - fileCount} існуючих зображень`
-      );
 
       const resultAction = await dispatch(
         updateListing({ id: parseInt(id), formData: submitData })
       );
 
       if (updateListing.fulfilled.match(resultAction)) {
-        // Перехід на сторінку оголошення
         navigate(`/listings/${id}`);
       } else {
-        console.error("Помилка при оновленні:", resultAction.error);
         alert("Виникла помилка при збереженні оголошення");
       }
-    } catch (error) {
-      console.error("Помилка при відправці форми:", error);
+    } catch (_error) {
       alert("Виникла помилка при збереженні оголошення");
     } finally {
       setIsSubmitting(false);
@@ -346,7 +298,6 @@ const EditListingPage = () => {
 
   // Обробник для роботи з файлами зображень
   const handleFiles = (files: File[]) => {
-    // Перевірка типу файлів - тільки зображення
     const validImageTypes = [
       "image/jpeg",
       "image/png",
@@ -360,13 +311,11 @@ const EditListingPage = () => {
     if (imageFiles.length === 0) {
       setErrors({
         ...errors,
-        images:
-          "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
+        images: "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
       });
       return;
     }
 
-    // Обмеження на кількість зображень
     const totalImages = formData.images.length + imageFiles.length;
     if (totalImages > 10) {
       setErrors({
@@ -376,7 +325,6 @@ const EditListingPage = () => {
       return;
     }
 
-    // Створення URL для попереднього перегляду зображень
     const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file));
 
     setFormData({
@@ -386,7 +334,6 @@ const EditListingPage = () => {
 
     setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
 
-    // Очищення помилки
     if (errors.images) {
       setErrors({
         ...errors,
@@ -395,7 +342,6 @@ const EditListingPage = () => {
     }
   };
 
-  // Відображення індикатора завантаження під час завантаження оголошення
   if (isLoading && !isInitialized) {
     return <Loader />;
   }
@@ -563,27 +509,104 @@ const EditListingPage = () => {
 
                 {/* Місцезнаходження */}
                 <div>
-                  <label
-                    htmlFor="location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Місцезнаходження *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Область *
                   </label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    placeholder="Наприклад: Київ, Київська область"
-                    className={`w-full px-4 py-2 border ${
-                      errors.location ? "border-red-500" : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                  />
-                  {errors.location && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.location}
-                    </p>
+                  <div className="relative">
+                    <select
+                      id="regionId"
+                      name="regionId"
+                      value={formData.regionId}
+                      onChange={handleInputChange}
+                      className={`appearance-none w-full px-4 py-2 border ${
+                        errors.regionId ? "border-red-500" : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    >
+                      <option value="">Виберіть область</option>
+                      {locationStatus === "loading" ? (
+                        <option disabled>Завантаження областей...</option>
+                      ) : (
+                        regions?.map((region: any) => (
+                          <option key={region.id} value={region.id}>
+                            {region.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown size={18} className="text-gray-400" />
+                    </div>
+                  </div>
+                  {errors.regionId && (
+                    <p className="mt-1 text-sm text-red-500">{errors.regionId}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Громада *
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="communityId"
+                      name="communityId"
+                      value={formData.communityId}
+                      onChange={handleInputChange}
+                      disabled={!formData.regionId}
+                      className={`appearance-none w-full px-4 py-2 border ${
+                        errors.communityId ? "border-red-500" : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    >
+                      <option value="">Виберіть громаду</option>
+                      {locationStatus === "loading" ? (
+                        <option disabled>Завантаження громад...</option>
+                      ) : (
+                        communities?.map((community: any) => (
+                          <option key={community.id} value={community.id}>
+                            {community.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown size={18} className="text-gray-400" />
+                    </div>
+                  </div>
+                  {errors.communityId && (
+                    <p className="mt-1 text-sm text-red-500">{errors.communityId}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Населений пункт *
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="locationId"
+                      name="locationId"
+                      value={formData.locationId}
+                      onChange={handleInputChange}
+                      disabled={!formData.communityId}
+                      className={`appearance-none w-full px-4 py-2 border ${
+                        errors.locationId ? "border-red-500" : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    >
+                      <option value="">Виберіть населений пункт</option>
+                      {locationStatus === "loading" ? (
+                        <option disabled>Завантаження населених пунктів...</option>
+                      ) : (
+                        locations?.map((location: any) => (
+                          <option key={location.id} value={location.id}>
+                            {location.settlement}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown size={18} className="text-gray-400" />
+                    </div>
+                  </div>
+                  {errors.locationId && (
+                    <p className="mt-1 text-sm text-red-500">{errors.locationId}</p>
                   )}
                 </div>
 
@@ -592,7 +615,6 @@ const EditListingPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Фотографії {!id && "*"}
                   </label>
-
                   <div
                     className={`border-2 border-dashed ${
                       isDragging
@@ -614,23 +636,17 @@ const EditListingPage = () => {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-
                     <Upload size={36} className="mx-auto text-gray-400 mb-2" />
-
                     <p className="text-sm text-gray-700 mb-1">
                       Перетягніть зображення сюди або натисніть, щоб вибрати
                     </p>
                     <p className="text-xs text-gray-500">
-                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10
-                      фото.
+                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10 фото.
                     </p>
                   </div>
-
                   {errors.images && (
                     <p className="mt-2 text-sm text-red-500">{errors.images}</p>
                   )}
-
-                  {/* Попередній перегляд завантажених зображень */}
                   {imagePreviewUrls.length > 0 && (
                     <div className="mt-4">
                       <p className="text-sm font-medium text-gray-700 mb-2">
@@ -659,8 +675,6 @@ const EditListingPage = () => {
                             </button>
                           </div>
                         ))}
-
-                        {/* Кнопка для додавання нових зображень */}
                         {imagePreviewUrls.length < 10 && (
                           <div
                             className="border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
@@ -677,7 +691,6 @@ const EditListingPage = () => {
                 </div>
               </div>
             </div>
-
             {/* Кнопки дій */}
             <div className="mt-8 flex items-center justify-end space-x-4">
               <button
@@ -687,7 +700,6 @@ const EditListingPage = () => {
               >
                 Скасувати
               </button>
-
               <button
                 type="submit"
                 disabled={isSubmitting}

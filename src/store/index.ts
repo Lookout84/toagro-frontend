@@ -9,6 +9,7 @@ import transactionsReducer from "./transactionsSlice";
 import adminReducer from "./adminSlice";
 import campaignsReducer from "./campaignsSlice";
 import brandReducer from "./brandSlice";
+import locationReducer from "./locationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
     transactions: transactionsReducer,
     admin: adminReducer,
     campaigns: campaignsReducer,
+    locations: locationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

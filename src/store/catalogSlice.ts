@@ -9,6 +9,7 @@ export interface Category {
   description?: string;
   image?: string;
   parentId?: number;
+  isMotorized?: boolean;
   children?: Category[];
   _count?: {
     listings: number;

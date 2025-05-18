@@ -176,3 +176,4 @@ export interface ConfirmDialogProps {
   cancelText?: string;
   confirmVariant?: "primary" | "danger";
 }
+

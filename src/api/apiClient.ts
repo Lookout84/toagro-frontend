@@ -310,6 +310,19 @@ export const brandsAPI = {
   },
 };
 
+// API для регіонів, громад, населених пунктів
+export const locationsAPI = {
+  getRegions: () => {
+    return api.get("/regions");
+  },
+  getCommunities: (regionId: number | string) => {
+    return api.get(`/regions/${regionId}/communities`);
+  },
+  getLocations: (communityId: number | string) => {
+    return api.get(`/regions/communities/${communityId}/locations`);
+  },
+};
+
 // API для чату
 export const chatAPI = {
   getConversations: () => {

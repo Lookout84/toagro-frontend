@@ -104,6 +104,7 @@ export interface Category {
   slug: string;
   description?: string;
   favorite?: boolean;
+  isMotorized?: boolean;
   image?: string;
   parentId?: number;
   children?: Category[];

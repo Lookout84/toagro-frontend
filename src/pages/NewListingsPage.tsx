@@ -7,73 +7,21 @@ import Pagination from "../components/common/Pagination";
 import { Filter, Tractor } from "lucide-react";
 import Button from "../components/common/Button";
 import MobileFilterDrawer from "../components/ui/MobileFilterDrawer";
-import CatalogFilters from "../components/ui/CatalogFilters";
 import useMediaQuery from "../hooks/useMediaQuery";
 import Card from "../components/common/Card";
-
+import FilterSidebar from "../components/ui/FilterSidebar";
 
 const NewListingsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((state) => state.catalog);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
+  const { listings, meta, status } = useAppSelector((state) => state.catalog);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Параметри фільтрації з фіксованим значенням condition = "new"
-  const [filters, setFilters] = useState({
-    condition: "new", // Фіксований фільтр для нової техніки
-    categoryId: "",
-    minPrice: "",
-    maxPrice: "",
-    location: "",
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
-
-  // Завантаження даних з фільтрами
+  // Завантаження даних при зміні сторінки або фільтрів
   useEffect(() => {
-    const loadListings = async () => {
-      setIsLoading(true);
-      try {
-        // Підготовка параметрів для запиту
-        const fetchParams: any = {
-          ...filters,
-          page: currentPage,
-          limit: 12,
-        };
-        
-        // Перетворення categoryId у число, якщо воно не порожнє
-        if (filters.categoryId) {
-          fetchParams.categoryId = typeof filters.categoryId === "string" 
-            ? parseInt(filters.categoryId, 10) 
-            : filters.categoryId;
-        }
-
-        const result = await dispatch(fetchListings(fetchParams)).unwrap();
-
-        setListings(result.listings || []);
-        setTotalPages(result.meta?.pages || 1);
-      } catch (error) {
-        console.error("Помилка завантаження нової техніки:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadListings();
-  }, [dispatch, filters, currentPage]);
-
-  // Обробка зміни фільтрів із збереженням фіксованого condition
-  const handleFilterChange = (newFilters: any) => {
-    setFilters({ 
-      ...newFilters, 
-      condition: "new" // Обов'язково зберігаємо умову "нова техніка"
-    });
-    setCurrentPage(1); // При зміні фільтрів повертаємось на першу сторінку
-  };
+    dispatch(fetchListings({ page: currentPage, limit: 12, condition: "new" }));
+  }, [dispatch, currentPage]);
 
   // Обробка зміни сторінки
   const handlePageChange = (page: number) => {
@@ -107,12 +55,7 @@ const NewListingsPage: React.FC = () => {
             <div className="w-full md:w-1/4 lg:w-1/5">
               <div className="bg-white rounded-lg border border-gray-200 p-4 sticky top-4">
                 <h2 className="font-semibold text-lg mb-4">Фільтри</h2>
-                <CatalogFilters 
-                  filters={filters} 
-                  onFilterChange={handleFilterChange} 
-                  categories={categories} 
-                  showCondition={false} // Не показуємо вибір стану, бо він зафіксований
-                />
+                <FilterSidebar fixedCondition="new" />
               </div>
             </div>
           )}
@@ -122,7 +65,7 @@ const NewListingsPage: React.FC = () => {
             {/* Мобільні фільтри */}
             {isMobile && (
               <div className="mb-4">
-                <Button 
+                <Button
                   onClick={toggleFilters}
                   variant="outline"
                   icon={<Filter size={16} />}
@@ -130,23 +73,18 @@ const NewListingsPage: React.FC = () => {
                 >
                   Фільтри
                 </Button>
-                
-                <MobileFilterDrawer 
+
+                <MobileFilterDrawer
                   isOpen={showFilters}
-                  onClose={() => setShowFilters(false)} 
+                  onClose={() => setShowFilters(false)}
                   title="Фільтри"
                 >
-                  <CatalogFilters 
-                    filters={filters} 
-                    onFilterChange={handleFilterChange} 
-                    categories={categories} 
-                    showCondition={false}
-                  />
+                  <FilterSidebar fixedCondition="new" />
                 </MobileFilterDrawer>
               </div>
             )}
 
-            {isLoading ? (
+            {status === "loading" ? (
               <div className="flex justify-center py-12">
                 <Loader />
               </div>
@@ -160,16 +98,16 @@ const NewListingsPage: React.FC = () => {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {listings.map((listing) => (
+                  {listings.map((listing: Listing) => (
                     <ListingCard key={listing.id} listing={listing} />
                   ))}
                 </div>
-                
-                {totalPages > 1 && (
+
+                {meta?.pages > 1 && (
                   <div className="mt-8 flex justify-center">
-                    <Pagination 
-                      currentPage={currentPage}
-                      totalPages={totalPages}
+                    <Pagination
+                      currentPage={meta.page}
+                      totalPages={meta.pages}
                       onPageChange={handlePageChange}
                     />
                   </div>
