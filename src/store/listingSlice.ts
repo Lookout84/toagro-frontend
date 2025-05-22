@@ -32,10 +32,10 @@ export const fetchListingById = createAsyncThunk(
 
       // Перевіряємо структуру і використовуємо правильний шлях
       if (response.data && response.data.data) {
-        // Якщо дані приходять у вигляді { data: { data: LISTING } }
+        // Якщо дані приходять у вигляді { status, data: LISTING }
         return response.data.data;
       } else if (response.data && response.data.listing) {
-        // Альтернативний шлях: { data: { listing: LISTING } }
+        // Альтернативний шлях: { status, listing: LISTING }
         return response.data.listing;
       } else if (response.data) {
         // Дані приходять прямо в полі data
@@ -46,7 +46,6 @@ export const fetchListingById = createAsyncThunk(
         return rejectWithValue("Неочікувана структура відповіді API");
       }
     } catch (error: unknown) {
-      // Обробка помилки залишається без змін
       if (
         error &&
         typeof error === "object" &&
@@ -55,10 +54,8 @@ export const fetchListingById = createAsyncThunk(
         typeof error.response === "object" &&
         "data" in error.response
       ) {
-        return rejectWithValue(
-          // @ts-expect-error: dynamic access
-          error.response.data?.message || "Помилка завантаження оголошення"
-        );
+        // @ts-expect-error: dynamic access
+        return rejectWithValue(error.response.data?.message || "Помилка завантаження оголошення");
       }
       return rejectWithValue("Помилка завантаження оголошення");
     }
@@ -70,7 +67,19 @@ export const fetchUserListings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getUserListings();
-      return response.data.data.listings;
+      // Якщо API повертає { status, data: { listings: [...] } }
+      if (response.data && response.data.data && Array.isArray(response.data.data.listings)) {
+        return response.data.data.listings;
+      }
+      // Якщо API повертає { status, listings: [...] }
+      if (response.data && Array.isArray(response.data.listings)) {
+        return response.data.listings;
+      }
+      // Якщо API повертає просто масив
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
     } catch (error: unknown) {
       if (
         error &&
@@ -95,15 +104,22 @@ export const fetchUserListings = createAsyncThunk(
 );
 
 // Створення оголошення
-
 export const createListing = createAsyncThunk(
   "listings/create",
   async (listingData: any, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.create(listingData);
-      return response.data.data.listing;
+      // Якщо API повертає { status, data: { listing: ... } }
+      if (response.data && response.data.data && response.data.data.listing) {
+        return response.data.data.listing;
+      }
+      // Якщо API повертає { status, listing: ... }
+      if (response.data && response.data.listing) {
+        return response.data.listing;
+      }
+      // Якщо API повертає просто об'єкт
+      return response.data;
     } catch (error) {
-      // Обробка помилок
       return rejectWithValue(
         (error as any).response?.data?.error || "Не вдалося створити оголошення"
       );
@@ -119,8 +135,7 @@ export const updateListing = createAsyncThunk(
   ) => {
     try {
       console.log(`Оновлення оголошення #${id} із ${formData.getAll('images').length} зображеннями`);
-      
-      // Для відлагодження FormData
+
       if (process.env.NODE_ENV === 'development') {
         console.log("FormData contents:");
         for (const pair of formData.entries()) {
@@ -130,17 +145,23 @@ export const updateListing = createAsyncThunk(
 
       const response = await listingsAPI.update(id, formData);
       console.log("Відповідь сервера:", response.data);
-      
+
       // Оновлюємо дані оголошення після успішного оновлення
-      dispatch(setCurrentListing(response.data.data || response.data));
-      
-      return response.data.data || response.data;
+      if (response.data && response.data.data) {
+        dispatch(setCurrentListing(response.data.data));
+        return response.data.data;
+      } else if (response.data && response.data.listing) {
+        dispatch(setCurrentListing(response.data.listing));
+        return response.data.listing;
+      } else {
+        dispatch(setCurrentListing(response.data));
+        return response.data;
+      }
     } catch (error: unknown) {
       console.error("Помилка при оновленні оголошення:", error);
-      
-      // Додаємо більше інформації про помилку
+
       let errorMessage = "Помилка оновлення оголошення";
-      
+
       if (
         error &&
         typeof error === "object" &&
@@ -155,12 +176,10 @@ export const updateListing = createAsyncThunk(
         } else if (responseData?.error) {
           errorMessage = responseData.error;
         }
-        
-        // Виводимо інформацію про статус для налагодження
+
         const statusCode = 'status' in error.response ? error.response.status : 'unknown';
         console.error(`Статус відповіді: ${statusCode}`, responseData);
-        
-        // Особлива обробка для помилки авторизації
+
         if ('status' in error.response && error.response.status === 401) {
           return rejectWithValue({
             message: "Авторизація закінчилась. Будь ласка, увійдіть знову, але НЕ втратьте дані.",
@@ -168,7 +187,7 @@ export const updateListing = createAsyncThunk(
           });
         }
       }
-      
+
       return rejectWithValue({ message: errorMessage });
     }
   }
@@ -214,7 +233,7 @@ const listingSlice = createSlice({
       })
       .addCase(fetchListingById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentListing = action.payload; // тут має бути саме оголошення
+        state.currentListing = action.payload;
       })
       .addCase(fetchListingById.rejected, (state, action) => {
         state.isLoading = false;
@@ -268,7 +287,9 @@ const listingSlice = createSlice({
       })
       .addCase(updateListing.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === "string"
+          ? action.payload
+          : (action.payload as any)?.message || "Помилка оновлення оголошення";
       })
 
       // Обробка результатів deleteListing

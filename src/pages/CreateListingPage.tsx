@@ -11,6 +11,22 @@ import {
 } from "../store/locationSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
+import { countriesAPI } from "../api/apiClient";
+import { useRef } from "react";
+
+// Add Leaflet to the Window type for TypeScript
+declare global {
+  interface Window {
+    L: any;
+  }
+}
+
+// Додайте цей об'єкт для центрів країн
+const countryCenters: Record<string, [number, number]> = {
+  UA: [48.3794, 31.1656], // Україна
+  PL: [52.069167, 19.480556], // Польща
+  // додайте інші країни за потреби
+};
 
 // --- MotorizedSpec тип ---
 interface MotorizedSpecForm {
@@ -100,9 +116,13 @@ interface FormData {
   currency: "UAH" | "USD" | "EUR";
   categoryId: string;
   categoryName: string;
+  countryId: string;
   regionId: string;
   communityId: string;
   locationId: string;
+  locationName: string;
+  latitude: number | undefined;
+  longitude: number | undefined;
   images: File[];
   condition: "NEW" | "USED";
   brandId: string;
@@ -110,21 +130,26 @@ interface FormData {
 }
 
 interface FormErrors {
-  title?: string | undefined;
-  description?: string | undefined;
-  price?: string | undefined;
-  categoryId?: string | undefined;
-  regionId?: string | undefined;
-  communityId?: string | undefined;
-  locationId?: string | undefined;
+  title?: string;
+  description?: string;
+  price?: string;
+  categoryId?: string;
+  countryId?: string;
+  regionId?: string;
+  communityId?: string;
+  locationId?: string;
+  locationName?: string;
   images?: string | undefined;
-  brandId?: string | undefined;
+  brandId?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 const CreateListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
+ const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
   const { categories, status: categoriesStatus } = useAppSelector(
     (state) => state.catalog
   );
@@ -135,10 +160,10 @@ const CreateListingPage = () => {
   const {
     regions,
     communities,
-    locations,
     status: locationStatus,
   } = useAppSelector((state) => state.locations);
 
+  const [countries, setCountries] = useState<{ id: number; name: string; code: string }[]>([]);
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
@@ -146,9 +171,13 @@ const CreateListingPage = () => {
     currency: "UAH",
     categoryId: "",
     categoryName: "",
+    countryId: "",
     regionId: "",
     communityId: "",
     locationId: "",
+    locationName: "",
+    latitude: undefined,
+    longitude: undefined,
     images: [],
     condition: "USED",
     brandId: "",
@@ -165,28 +194,163 @@ const CreateListingPage = () => {
   const [brandsDropdownOpen, setBrandsDropdownOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // --- Карта ---
+  const [mapLoaded, setMapLoaded] = useState(false);
+
   useEffect(() => {
     if (categories.length === 0) dispatch(fetchCategories());
     if (brands.length === 0) dispatch(fetchBrands());
-    if (!regions || regions.length === 0) dispatch(fetchRegions());
-  }, [dispatch, categories.length, brands.length, regions, regions?.length]);
+    countriesAPI.getAll().then((res) => {
+      setCountries(res.data.data || []);
+    });
+  }, [dispatch, categories.length, brands.length]);
+
+  useEffect(() => {
+    if (formData.countryId) {
+      dispatch(fetchRegions(formData.countryId));
+      setFormData((prev) => ({
+        ...prev,
+        regionId: "",
+        communityId: "",
+        locationId: "",
+      }));
+    }
+  }, [dispatch, formData.countryId]);
 
   useEffect(() => {
     if (formData.regionId) {
       dispatch(fetchCommunities(formData.regionId));
+      setFormData((prev) => ({
+        ...prev,
+        communityId: "",
+        locationId: "",
+      }));
     }
   }, [dispatch, formData.regionId]);
 
   useEffect(() => {
     if (formData.communityId) {
       dispatch(fetchLocations(formData.communityId));
+      setFormData((prev) => ({
+        ...prev,
+        locationId: "",
+      }));
     }
   }, [dispatch, formData.communityId]);
+
+  // --- Карта: Leaflet ---
+ // 1. Динамічне підключення leaflet
+  useEffect(() => {
+    if (!mapLoaded && typeof window !== "undefined") {
+      const leafletCss = document.createElement("link");
+      leafletCss.rel = "stylesheet";
+      leafletCss.href = "https://unpkg.com/leaflet/dist/leaflet.css";
+      document.head.appendChild(leafletCss);
+
+      const leafletScript = document.createElement("script");
+      leafletScript.src = "https://unpkg.com/leaflet/dist/leaflet.js";
+      leafletScript.async = true;
+      leafletScript.onload = () => setMapLoaded(true);
+      document.body.appendChild(leafletScript);
+    }
+  }, [mapLoaded]);
+
+  // 2. Ініціалізація карти лише один раз
+  useEffect(() => {
+    if (
+      mapLoaded &&
+      window.L &&
+      document.getElementById("listing-map") &&
+      !mapRef.current
+    ) {
+      const L = window.L;
+      const country = countries.find((c) => c.id.toString() === formData.countryId);
+      const center = countryCenters[country?.code || "UA"] || [48.3794, 31.1656];
+      mapRef.current = L.map("listing-map").setView(center, 6);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://osm.org/copyright">OSM</a>',
+      }).addTo(mapRef.current);
+
+      mapRef.current.on("click", function (e: any) {
+        if (markerRef.current) {
+          markerRef.current.setLatLng(e.latlng);
+        } else {
+          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(mapRef.current);
+          markerRef.current.on("dragend", function (event: any) {
+            const latlng = event.target.getLatLng();
+            setFormData((prev) => ({
+              ...prev,
+              latitude: latlng.lat,
+              longitude: latlng.lng,
+            }));
+          });
+        }
+        setFormData((prev) => ({
+          ...prev,
+          latitude: e.latlng.lat,
+          longitude: e.latlng.lng,
+        }));
+      });
+    }
+    // eslint-disable-next-line
+  }, [mapLoaded]);
+
+  // 3. Зміна центру карти при зміні країни
+  useEffect(() => {
+    if (mapRef.current && countries.length && formData.countryId) {
+      const country = countries.find((c) => c.id.toString() === formData.countryId);
+      const center = countryCenters[country?.code || "UA"] || [48.3794, 31.1656];
+      mapRef.current.setView(center, 6);
+      // Скидаємо маркер при зміні країни
+      if (markerRef.current) {
+        mapRef.current.removeLayer(markerRef.current);
+        markerRef.current = null;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        latitude: undefined,
+        longitude: undefined,
+      }));
+    }
+    // eslint-disable-next-line
+  }, [formData.countryId, countries]);
+
+  // 4. Встановлення маркера, якщо вже є координати
+  useEffect(() => {
+    if (
+      mapRef.current &&
+      window.L &&
+      formData.latitude &&
+      formData.longitude
+    ) {
+      const L = window.L;
+      if (markerRef.current) {
+        markerRef.current.setLatLng([formData.latitude, formData.longitude]);
+      } else {
+        markerRef.current = L.marker([formData.latitude, formData.longitude], { draggable: true }).addTo(mapRef.current);
+        markerRef.current.on("dragend", function (event: any) {
+          const latlng = event.target.getLatLng();
+          setFormData((prev) => ({
+            ...prev,
+            latitude: latlng.lat,
+            longitude: latlng.lng,
+          }));
+        });
+      }
+      mapRef.current.setView([formData.latitude, formData.longitude], 12);
+    }
+    // eslint-disable-next-line
+  }, [formData.latitude, formData.longitude]);
 
   const selectedCategoryObj = categories.find(
     (cat) => cat.id === Number(formData.categoryId)
   );
   const isMotorized = selectedCategoryObj?.isMotorized ?? false;
+
+  const isUkraine =
+    countries.find((c) => c.id.toString() === formData.countryId)?.code ===
+    "UA";
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -211,6 +375,14 @@ const CreateListingPage = () => {
         [name]: value,
         brandName: selectedBrand ? selectedBrand.name : "",
       });
+    } else if (name === "countryId") {
+      setFormData({
+        ...formData,
+        countryId: value,
+        regionId: "",
+        communityId: "",
+        locationId: "",
+      });
     } else if (name === "regionId") {
       setFormData({
         ...formData,
@@ -223,6 +395,16 @@ const CreateListingPage = () => {
         ...formData,
         communityId: value,
         locationId: "",
+      });
+    } else if (name === "locationId") {
+      setFormData({
+        ...formData,
+        locationId: value,
+      });
+    } else if (name === "locationName") {
+      setFormData({
+        ...formData,
+        locationName: value,
       });
     } else {
       setFormData({
@@ -312,9 +494,14 @@ const CreateListingPage = () => {
     )
       newErrors.price = "Введіть коректну ціну";
     if (!formData.categoryId) newErrors.categoryId = "Виберіть категорію";
+    if (!formData.countryId) newErrors.countryId = "Виберіть країну";
     if (!formData.regionId) newErrors.regionId = "Виберіть область";
-    if (!formData.communityId) newErrors.communityId = "Виберіть громаду";
-    if (!formData.locationId) newErrors.locationId = "Виберіть населений пункт";
+    if (isUkraine && !formData.communityId)
+      newErrors.communityId = "Виберіть громаду";
+    if (!formData.locationName?.trim())
+      newErrors.locationName = "Введіть населений пункт";
+    if (formData.latitude === undefined || formData.longitude === undefined)
+      newErrors.latitude = "Вкажіть місцезнаходження на карті";
     if (formData.images.length === 0)
       newErrors.images = "Завантажте хоча б одне зображення";
 
@@ -337,9 +524,12 @@ const CreateListingPage = () => {
       formDataToSubmit.append("currency", formData.currency);
       formDataToSubmit.append("category", formData.categoryName);
       formDataToSubmit.append("categoryId", formData.categoryId);
+      formDataToSubmit.append("countryId", formData.countryId);
       formDataToSubmit.append("regionId", formData.regionId);
-      formDataToSubmit.append("communityId", formData.communityId);
-      formDataToSubmit.append("locationId", formData.locationId);
+      if (isUkraine) formDataToSubmit.append("communityId", formData.communityId);
+      formDataToSubmit.append("locationName", formData.locationName);
+      formDataToSubmit.append("latitude", String(formData.latitude ?? ""));
+      formDataToSubmit.append("longitude", String(formData.longitude ?? ""));
       formDataToSubmit.append(
         "condition",
         formData.condition === "NEW" ? "new" : "used"
@@ -515,9 +705,9 @@ const CreateListingPage = () => {
                                   setBrandSearchQuery(brand.name);
                                   setBrandsDropdownOpen(false);
                                   if (errors.brandId) {
-                                    setErrors({
-                                      ...errors,
-                                      brandId: undefined,
+                                    setErrors(prev => {
+                                      const { brandId, ...rest } = prev;
+                                      return rest;
                                     });
                                   }
                                 }}
@@ -694,6 +884,37 @@ const CreateListingPage = () => {
               </div>
             </div>
             {/* Місцезнаходження */}
+            {/* Країна */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Країна *
+              </label>
+              <div className="relative">
+                <select
+                  id="countryId"
+                  name="countryId"
+                  value={formData.countryId}
+                  onChange={handleInputChange}
+                  className={`appearance-none w-full px-4 py-2 border ${
+                    errors.countryId ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                >
+                  <option value="">Виберіть країну</option>
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ChevronDown size={18} className="text-gray-400" />
+                </div>
+              </div>
+              {errors.countryId && (
+                <p className="mt-1 text-sm text-red-500">{errors.countryId}</p>
+              )}
+            </div>
+            {/* Область */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Область *
@@ -704,18 +925,11 @@ const CreateListingPage = () => {
                   name="regionId"
                   value={formData.regionId}
                   onChange={handleInputChange}
+                  disabled={!formData.countryId}
                   className={`appearance-none w-full px-4 py-2 border ${
                     errors.regionId ? "border-red-500" : "border-gray-300"
                   } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                 >
-                  {/* <option value="">Виберіть область</option>
-                  {locationStatus === "loading" ? (
-                    <option disabled>Завантаження областей...</option>
-                  ) : (
-                    regions?.map((region: { id: number; name: string }) => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option> */}
                   <option value="">Виберіть область</option>
                   {locationStatus === "loading" ? (
                     <option disabled>Завантаження областей...</option>
@@ -736,42 +950,46 @@ const CreateListingPage = () => {
                 <p className="mt-1 text-sm text-red-500">{errors.regionId}</p>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Громада *
-              </label>
-              <div className="relative">
-                <select
-                  id="communityId"
-                  name="communityId"
-                  value={formData.communityId}
-                  onChange={handleInputChange}
-                  disabled={!formData.regionId}
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.communityId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Виберіть громаду</option>
-                  {locationStatus === "loading" ? (
-                    <option disabled>Завантаження громад...</option>
-                  ) : (
-                    communities?.map((community: any) => (
-                      <option key={community.id} value={community.id}>
-                        {community.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
+            {/* Громада (тільки для України) */}
+            {isUkraine && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Громада {isUkraine ? "" : "(не обов'язково)"}
+                </label>
+                <div className="relative">
+                  <select
+                    id="communityId"
+                    name="communityId"
+                    value={formData.communityId}
+                    onChange={handleInputChange}
+                    disabled={!formData.regionId}
+                    className={`appearance-none w-full px-4 py-2 border ${
+                      errors.communityId ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                  >
+                    <option value="">Виберіть громаду</option>
+                    {locationStatus === "loading" ? (
+                      <option disabled>Завантаження громад...</option>
+                    ) : (
+                      communities?.map((community: any) => (
+                        <option key={community.id} value={community.id}>
+                          {community.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <ChevronDown size={18} className="text-gray-400" />
+                  </div>
                 </div>
+                {errors.communityId && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.communityId}
+                  </p>
+                )}
               </div>
-              {errors.communityId && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.communityId}
-                </p>
-              )}
-            </div>
+            )}
+            {/* Населений пункт */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Населений пункт *
@@ -779,49 +997,37 @@ const CreateListingPage = () => {
               <div className="relative">
                 <input
                   type="text"
-                  id="locationId"
-                  name="locationId"
-                  value={formData.locationId}
+                  id="locationName"
+                  name="locationName"
+                  value={formData.locationName}
                   onChange={handleInputChange}
                   placeholder="Введіть назву населеного пункту"
                   className={`appearance-none w-full px-4 py-2 border ${
-                    errors.locationId ? "border-red-500" : "border-gray-300"
+                    errors.locationName ? "border-red-500" : "border-gray-300"
                   } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                 />
               </div>
-
-              {/* <label className="block text-sm font-medium text-gray-700 mb-1">
-                Населений пункт *
+              {errors.locationName && (
+                <p className="mt-1 text-sm text-red-500">{errors.locationName}</p>
+              )}
+            </div>
+            {/* Карта для вибору координат */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Вкажіть місцезнаходження на карті *
               </label>
-              <div className="relative">
-                <select
-                  id="locationId"
-                  name="locationId"
-                  value={formData.locationId}
-                  onChange={handleInputChange}
-                  disabled={!formData.communityId}
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.locationId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Виберіть населений пункт</option>
-                  {locationStatus === "loading" ? (
-                    <option disabled>Завантаження населених пунктів...</option>
-                  ) : (
-                    locations?.map((location: any) => (
-                      <option key={location.id} value={location.id}>
-                        {location.settlement}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
+              <div className="w-full h-64 rounded-md border border-gray-300 overflow-hidden">
+                <div id="listing-map" style={{ width: "100%", height: "100%" }} />
+              </div>
+              {errors.latitude && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.latitude || errors.longitude}
+                </p>
+              )}
+              {formData.latitude && formData.longitude && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Координати: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                 </div>
-              </div> */}
-
-              {errors.locationId && (
-                <p className="mt-1 text-sm text-red-500">{errors.locationId}</p>
               )}
             </div>
             {/* Завантаження зображень */}

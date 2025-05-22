@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken, removeToken, setToken } from "../utils/auth"; // Імпортуємо функції для роботи з токенами
+import { getToken, removeToken, setToken } from "../utils/auth";
 
 // Розширюємо тип AxiosRequestConfig для підтримки skipAuthRefresh
 declare module "axios" {
@@ -34,46 +34,26 @@ api.interceptors.response.use(
   async (error) => {
     console.error("API Error:", error);
 
-    // // Важливо: НЕ виходимо автоматично при помилці у відповіді
-    // if (error.response) {
-    //   // Помилка авторизації, але не виходимо при редагуванні
-    //   if (error.response.status === 401) {
-    //     console.error("Auth error 401, but not logging out automatically");
-
-    //     // Записуємо URL поточної сторінки, якщо не редагування
-    //     if (!window.location.pathname.includes("edit")) {
-    //       removeToken(); // Видаляємо токен тільки для інших операцій
-    //       // Перенаправляємо ТІЛЬКИ для інших операцій
-    //       window.location.href = "/login?expired=true";
-    //     }
-    //   }
-    // }
-    // Пропуск запитів, що помічені для пропуску оновлення токена
     if (error.config?.skipAuthRefresh) {
       return Promise.reject(error);
     }
 
-    // Якщо це помилка 401 і не запит на оновлення токена
     if (
       error.response?.status === 401 &&
       !error.config.url.includes("/auth/refresh")
     ) {
       console.error("Auth error 401");
 
-      // Записуємо URL поточної сторінки
       const currentPath = window.location.pathname;
 
-      // Якщо це сторінка редагування, не виходимо автоматично
       if (currentPath.includes("/edit") || currentPath.includes("/create")) {
         console.log("На сторінці редагування - залишаємось на сторінці");
 
         try {
-          // Спробуємо оновити токен
           const response = await authAPI.refreshToken();
           if (response.data?.accessToken) {
             setToken(response.data.accessToken);
 
-            // Повторюємо оригінальний запит з новим токеном
             error.config.headers.Authorization = `Bearer ${response.data.accessToken}`;
             return api(error.config);
           }
@@ -81,7 +61,6 @@ api.interceptors.response.use(
           console.error("Failed to refresh token:", refreshError);
         }
       } else {
-        // На інших сторінках виходимо і перенаправляємо на логін
         removeToken();
         window.location.href = "/login?expired=true";
       }
@@ -136,7 +115,6 @@ export const authAPI = {
       "/auth/refresh",
       {},
       {
-        // Спеціальний флаг, щоб уникнути рекурсії при оновленні токенів
         skipAuthRefresh: true,
       }
     );
@@ -167,13 +145,8 @@ export const listingsAPI = {
   },
 
   update: (id: number, formData: FormData) => {
-    // ВАЖЛИВО: НЕ встановлюйте заголовок Content-Type при відправці FormData
-    // Браузер автоматично встановить правильний multipart/form-data з boundary
     return api.put(`/listings/${id}`, formData, {
-      headers: {
-        // Видаліть Content-Type, якщо він був встановлений
-      },
-      // Додаємо додаткові опції для відстеження прогресу (опціонально)
+      headers: {},
       onUploadProgress: (progressEvent) => {
         console.log(
           "Прогрес завантаження:",
@@ -182,18 +155,6 @@ export const listingsAPI = {
       },
     });
   },
-
-  // update: (
-  //   id: number,
-  //   formData: {
-  //     name?: string;
-  //     description?: string;
-  //     price?: number;
-  //     categoryId?: number;
-  //   }
-  // ) => {
-  //   return api.put(`/listings/${id}`, formData);
-  // },
 
   delete: (id: number) => {
     return api.delete(`/listings/${id}`);
@@ -220,7 +181,6 @@ export const categoriesAPI = {
     return api.get("/categories/tree");
   },
 
-  // Адміністративні функції
   create: (data: { name: string; parentId?: number }) => {
     return api.post("/categories", data);
   },
@@ -233,8 +193,6 @@ export const categoriesAPI = {
     return api.delete(`/categories/${id}`);
   },
 };
-
-// Add this after the categoriesAPI section
 
 // API для брендів (марок техніки)
 export const brandsAPI = {
@@ -250,7 +208,6 @@ export const brandsAPI = {
     return api.get(`/brands/slug/${slug}`);
   },
 
-  // Адміністративні функції
   create: (data: { name: string; description?: string; logo?: File }) => {
     const formData = new FormData();
     formData.append("name", data.name);
@@ -299,20 +256,31 @@ export const brandsAPI = {
     return api.delete(`/brands/${id}`);
   },
 
-  // Get popular/featured brands
   getPopular: (limit = 10) => {
     return api.get(`/brands/popular?limit=${limit}`);
   },
 
-  // Search brands by name
   search: (query: string) => {
     return api.get(`/brands/search?q=${query}`);
   },
 };
 
-// API для регіонів, громад, населених пунктів
+// API для країн
+export const countriesAPI = {
+  getAll: () => {
+    return api.get("/countries");
+  },
+  getById: (id: number) => {
+    return api.get(`/countries/${id}`);
+  },
+};
+
+// API для регіонів, громад, населених пунктів з урахуванням countryId
 export const locationsAPI = {
-  getRegions: () => {
+  getRegions: (countryId?: number | string) => {
+    if (countryId) {
+      return api.get(`/countries/${countryId}/regions`);
+    }
     return api.get("/regions");
   },
   getCommunities: (regionId: number | string) => {
@@ -320,6 +288,9 @@ export const locationsAPI = {
   },
   getLocations: (communityId: number | string) => {
     return api.get(`/regions/communities/${communityId}/locations`);
+  },
+  getLocationsByCountry: (countryId: number | string) => {
+    return api.get(`/countries/${countryId}/locations`);
   },
 };
 
@@ -371,7 +342,6 @@ export const transactionsAPI = {
 
 // API для сповіщень
 export const notificationsAPI = {
-  // Налаштування сповіщень
   getSettings: () => {
     return api.get("/notifications/settings");
   },
@@ -396,7 +366,6 @@ export const notificationsAPI = {
     return api.put("/notifications/preferences", preferences);
   },
 
-  // Історія сповіщень
   getHistory: (params?: Record<string, unknown>) => {
     return api.get("/notifications/history", { params });
   },
@@ -417,7 +386,6 @@ export const notificationsAPI = {
     return api.post(`/notifications/history/${id}/read`);
   },
 
-  // Тестові сповіщення (для налагодження)
   sendTestEmail: () => {
     return api.post("/notifications/test-email");
   },
@@ -457,7 +425,6 @@ export const adminAPI = {
     return api.get("/admin/categories");
   },
 
-  // API для шаблонів сповіщень (адмін)
   getNotificationTemplates: () => {
     return api.get("/notifications/templates");
   },
@@ -485,7 +452,6 @@ export const adminAPI = {
     return api.delete(`/notifications/templates/${id}`);
   },
 
-  // API для масових розсилок
   sendBulkEmails: (data: {
     subject: string;
     body: string;
@@ -613,7 +579,6 @@ export const scheduledTasksAPI = {
     return api.get(`/scheduled-tasks/payment/${paymentId}/reminder`);
   },
 
-  // Адміністративні функції
   createTask: (task: {
     name: string;
     schedule: string;

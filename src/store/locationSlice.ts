@@ -1,9 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { locationsAPI } from "../api/apiClient";
 
+// Додано countryId до Region, Community, Location
 interface Region {
   id: number;
   name: string;
+  code?: string;
+  countryId?: number;
 }
 
 interface Community {
@@ -16,6 +19,9 @@ interface Location {
   id: number;
   settlement: string;
   communityId: number;
+  countryId: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface LocationState {
@@ -34,12 +40,12 @@ const initialState: LocationState = {
   error: null,
 };
 
-// Fetch regions using locationsAPI
-export const fetchRegions = createAsyncThunk<Region[]>(
+// Додаємо countryId як опціональний параметр
+export const fetchRegions = createAsyncThunk<Region[], number | string | undefined>(
   "locations/fetchRegions",
-  async (_, { rejectWithValue }) => {
+  async (countryId, { rejectWithValue }) => {
     try {
-      const response = await locationsAPI.getRegions();
+      const response = await locationsAPI.getRegions(countryId);
       // Якщо API повертає { status, data }, то треба response.data.data
       return response.data.data;
     } catch (error: any) {
@@ -50,7 +56,6 @@ export const fetchRegions = createAsyncThunk<Region[]>(
   }
 );
 
-// Fetch communities by regionId using locationsAPI
 export const fetchCommunities = createAsyncThunk<Community[], number | string>(
   "locations/fetchCommunities",
   async (regionId, { rejectWithValue }) => {
@@ -65,7 +70,6 @@ export const fetchCommunities = createAsyncThunk<Community[], number | string>(
   }
 );
 
-// Fetch locations by communityId using locationsAPI
 export const fetchLocations = createAsyncThunk<Location[], number | string>(
   "locations/fetchLocations",
   async (communityId, { rejectWithValue }) => {
