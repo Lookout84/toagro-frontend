@@ -3,7 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchListingById, updateListing } from "../store/listingSlice";
 import { fetchCategories } from "../store/catalogSlice";
-import { fetchRegions, fetchCommunities, fetchLocations } from "../store/locationSlice";
+import {
+  fetchRegions,
+  fetchCommunities,
+  fetchLocations,
+} from "../store/locationSlice";
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import Loader from "../components/common/Loader";
 import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
@@ -28,6 +32,8 @@ interface FormData {
   locationId: string;
   images: (File | string)[];
   countryId: string;
+  priceType: "NETTO" | "BRUTTO"; // Додаємо тип ціни
+  vatIncluded: boolean; // Додаємо ПДВ
 }
 
 interface FormErrors {
@@ -71,9 +77,18 @@ const EditListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { currentListing, isLoading } = useAppSelector((state) => state.listing);
-  const { categories, status: categoriesStatus } = useAppSelector((state) => state.catalog);
-  const { regions, communities, locations, status: locationStatus } = useAppSelector((state) => state.locations);
+  const { currentListing, isLoading } = useAppSelector(
+    (state) => state.listing
+  );
+  const { categories, status: categoriesStatus } = useAppSelector(
+    (state) => state.catalog
+  );
+  const {
+    regions,
+    communities,
+    locations,
+    status: locationStatus,
+  } = useAppSelector((state) => state.locations);
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -86,6 +101,8 @@ const EditListingPage = () => {
     locationId: "",
     images: [],
     countryId: "",
+    priceType: "NETTO",
+    vatIncluded: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -95,7 +112,9 @@ const EditListingPage = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // --- Геолокація ---
-  const [countries, setCountries] = useState<{ id: number; name: string; code: string }[]>([]);
+  const [countries, setCountries] = useState<
+    { id: number; name: string; code: string }[]
+  >([]);
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
 
@@ -104,7 +123,8 @@ const EditListingPage = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // --- MotorizedSpec ---
-  const [motorizedSpec, setMotorizedSpec] = useState<MotorizedSpecForm>(initialMotorizedSpec);
+  const [motorizedSpec, setMotorizedSpec] =
+    useState<MotorizedSpecForm>(initialMotorizedSpec);
 
   // Завантаження країн
   useEffect(() => {
@@ -121,8 +141,7 @@ const EditListingPage = () => {
           (currentListing as any)?.countryId ??
           (currentListing as any)?.data?.countryId ??
           (currentListing as any)?.data?.listing?.countryId
-        )?.toString() ||
-      c.id.toString() === formData.countryId
+        )?.toString() || c.id.toString() === formData.countryId
   );
   const isUkraine = selectedCountry?.code === "UA";
 
@@ -150,8 +169,9 @@ const EditListingPage = () => {
       !mapRef.current
     ) {
       const L = window.L;
-      const center =
-        countryCenters[selectedCountry?.code || "UA"] || [48.3794, 31.1656];
+      const center = countryCenters[selectedCountry?.code || "UA"] || [
+        48.3794, 31.1656,
+      ];
       mapRef.current = L.map("listing-map").setView(center, 6);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -162,7 +182,9 @@ const EditListingPage = () => {
         if (markerRef.current) {
           markerRef.current.setLatLng(e.latlng);
         } else {
-          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(mapRef.current);
+          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(
+            mapRef.current
+          );
           markerRef.current.on("dragend", function (event: any) {
             const latlng = event.target.getLatLng();
             setLatitude(latlng.lat);
@@ -178,8 +200,12 @@ const EditListingPage = () => {
 
   useEffect(() => {
     if (mapRef.current && countries.length && formData.countryId) {
-      const country = countries.find((c) => c.id.toString() === formData.countryId);
-      const center = countryCenters[country?.code || "UA"] || [48.3794, 31.1656];
+      const country = countries.find(
+        (c) => c.id.toString() === formData.countryId
+      );
+      const center = countryCenters[country?.code || "UA"] || [
+        48.3794, 31.1656,
+      ];
       mapRef.current.setView(center, 6);
       if (markerRef.current) {
         mapRef.current.removeLayer(markerRef.current);
@@ -192,17 +218,14 @@ const EditListingPage = () => {
   }, [formData.countryId, countries]);
 
   useEffect(() => {
-    if (
-      mapRef.current &&
-      window.L &&
-      latitude &&
-      longitude
-    ) {
+    if (mapRef.current && window.L && latitude && longitude) {
       const L = window.L;
       if (markerRef.current) {
         markerRef.current.setLatLng([latitude, longitude]);
       } else {
-        markerRef.current = L.marker([latitude, longitude], { draggable: true }).addTo(mapRef.current);
+        markerRef.current = L.marker([latitude, longitude], {
+          draggable: true,
+        }).addTo(mapRef.current);
         markerRef.current.on("dragend", function (event: any) {
           const latlng = event.target.getLatLng();
           setLatitude(latlng.lat);
@@ -231,9 +254,12 @@ const EditListingPage = () => {
   const getListingValue = useCallback(
     (key: string, defaultValue: any = "") => {
       if (!currentListing) return defaultValue;
-      if (key in currentListing) return currentListing[key as keyof typeof currentListing];
-      if ((currentListing as any)?.data?.[key] !== undefined) return (currentListing as any).data[key];
-      if ((currentListing as any)?.data?.listing?.[key] !== undefined) return (currentListing as any).data.listing[key];
+      if (key in currentListing)
+        return currentListing[key as keyof typeof currentListing];
+      if ((currentListing as any)?.data?.[key] !== undefined)
+        return (currentListing as any).data[key];
+      if ((currentListing as any)?.data?.listing?.[key] !== undefined)
+        return (currentListing as any).data.listing[key];
       return defaultValue;
     },
     [currentListing]
@@ -257,6 +283,8 @@ const EditListingPage = () => {
         const communityId = getListingValue("communityId", "");
         const locationId = getListingValue("locationId", "");
         const countryId = getListingValue("countryId", "");
+        const priceType = getListingValue("priceType", "NETTO");
+        const vatIncluded = getListingValue("vatIncluded", false);
 
         let validCurrency: "UAH" | "USD" | "EUR" = "UAH";
         if (currency === "USD") validCurrency = "USD";
@@ -273,6 +301,8 @@ const EditListingPage = () => {
           locationId: locationId ? String(locationId) : "",
           images: Array.isArray(images) ? images : [],
           countryId: countryId ? String(countryId) : "",
+          priceType: priceType === "BRUTTO" ? "BRUTTO" : "NETTO",
+          vatIncluded: !!vatIncluded,
         });
 
         if (Array.isArray(images)) {
@@ -318,9 +348,14 @@ const EditListingPage = () => {
   }, [currentListing, isLoading, id, navigate, isInitialized]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
 
     if (name === "regionId") {
       setFormData({
@@ -342,6 +377,15 @@ const EditListingPage = () => {
         regionId: "",
         communityId: "",
         locationId: "",
+      });
+    } else if (name === "vatIncluded") {
+      let checked = false;
+      if (type === "checkbox" && "checked" in e.target) {
+        checked = (e.target as HTMLInputElement).checked;
+      }
+      setFormData({
+        ...formData,
+        vatIncluded: type === "checkbox" ? checked : value === "true",
       });
     } else {
       setFormData({
@@ -417,14 +461,19 @@ const EditListingPage = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.title.trim()) newErrors.title = "Введіть назву оголошення";
-    if (!formData.description.trim()) newErrors.description = "Введіть опис оголошення";
+    if (!formData.description.trim())
+      newErrors.description = "Введіть опис оголошення";
     if (!formData.price.trim()) newErrors.price = "Введіть ціну";
-    else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0)
+    else if (
+      isNaN(parseFloat(formData.price)) ||
+      parseFloat(formData.price) <= 0
+    )
       newErrors.price = "Введіть коректну ціну";
     if (!formData.categoryId) newErrors.categoryId = "Виберіть категорію";
     if (!formData.countryId) newErrors.countryId = "Виберіть країну";
     if (!formData.regionId) newErrors.regionId = "Виберіть область";
-    if (isUkraine && !formData.communityId) newErrors.communityId = "Виберіть громаду";
+    if (isUkraine && !formData.communityId)
+      newErrors.communityId = "Виберіть громаду";
     if (!formData.locationId) newErrors.locationId = "Виберіть населений пункт";
     if ((formData.images.length === 0 && !id) || formData.images.length === 0)
       newErrors.images = "Завантажте хоча б одне зображення";
@@ -461,6 +510,9 @@ const EditListingPage = () => {
       submitData.append("locationId", formData.locationId);
       submitData.append("latitude", String(latitude ?? ""));
       submitData.append("longitude", String(longitude ?? ""));
+      // Додаємо нові поля
+      submitData.append("priceType", formData.priceType);
+      submitData.append("vatIncluded", String(formData.vatIncluded));
 
       // Додаємо motorizedSpec якщо категорія моторизована
       if (isMotorized) {
@@ -507,7 +559,8 @@ const EditListingPage = () => {
     if (imageFiles.length === 0) {
       setErrors({
         ...errors,
-        images: "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
+        images:
+          "Будь ласка, завантажте тільки зображення (JPEG, PNG, GIF, WEBP)",
       });
       return;
     }
@@ -622,7 +675,7 @@ const EditListingPage = () => {
                       placeholder="Наприклад: 1000000"
                       min="0"
                       step="1"
-                      className={`w-3/4 px-4 py-2 border ${
+                      className={`w-2/4 px-4 py-2 border ${
                         errors.price ? "border-red-500" : "border-gray-300"
                       } rounded-l-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                     />
@@ -632,7 +685,7 @@ const EditListingPage = () => {
                         name="currency"
                         value={formData.currency}
                         onChange={handleInputChange}
-                        className="appearance-none h-full px-3 py-2 border-l-0 border border-gray-300 rounded-r-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 w-full"
+                        className="appearance-none h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 w-full"
                       >
                         <option value="UAH">
                           {getCurrencySymbol("UAH")} UAH
@@ -648,6 +701,37 @@ const EditListingPage = () => {
                         <ChevronDown size={18} className="text-gray-400" />
                       </div>
                     </div>
+                    <div className="relative w-1/4">
+                      <select
+                        id="priceType"
+                        name="priceType"
+                        value={formData.priceType}
+                        onChange={handleInputChange}
+                        className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 rounded-r-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="NETTO">Нетто (без ПДВ)</option>
+                        <option value="BRUTTO">Брутто (з ПДВ)</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronDown size={18} className="text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      id="vatIncluded"
+                      name="vatIncluded"
+                      checked={formData.vatIncluded}
+                      onChange={handleInputChange}
+                      className="mr-2"
+                    />
+                    <label
+                      htmlFor="vatIncluded"
+                      className="text-sm text-gray-700"
+                    >
+                      Включено ПДВ
+                    </label>
                   </div>
                   {errors.price && (
                     <p className="mt-1 text-sm text-red-500">{errors.price}</p>
@@ -655,7 +739,11 @@ const EditListingPage = () => {
                   {formData.price && !errors.price && (
                     <div className="text-sm text-gray-500 mt-1">
                       Буде відображатися як:{" "}
-                      {formatPriceWithSymbol(formData.price, formData.currency)}
+                      {formatPriceWithSymbol(formData.price, formData.currency)}{" "}
+                      {formData.priceType === "BRUTTO"
+                        ? "(Брутто, з ПДВ)"
+                        : "(Нетто, без ПДВ)"}
+                      {formData.vatIncluded ? " (ПДВ включено)" : ""}
                     </div>
                   )}
                 </div>
@@ -728,7 +816,9 @@ const EditListingPage = () => {
                     </div>
                   </div>
                   {errors.countryId && (
-                    <p className="mt-1 text-sm text-red-500">{errors.countryId}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.countryId}
+                    </p>
                   )}
                 </div>
 
@@ -763,7 +853,9 @@ const EditListingPage = () => {
                     </div>
                   </div>
                   {errors.regionId && (
-                    <p className="mt-1 text-sm text-red-500">{errors.regionId}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.regionId}
+                    </p>
                   )}
                 </div>
                 {/* Громада (тільки для України, не обов'язково) */}
@@ -780,7 +872,9 @@ const EditListingPage = () => {
                         onChange={handleInputChange}
                         disabled={!formData.regionId}
                         className={`appearance-none w-full px-4 py-2 border ${
-                          errors.communityId ? "border-red-500" : "border-gray-300"
+                          errors.communityId
+                            ? "border-red-500"
+                            : "border-gray-300"
                         } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                       >
                         <option value="">Виберіть громаду</option>
@@ -810,14 +904,18 @@ const EditListingPage = () => {
                       name="locationId"
                       value={formData.locationId}
                       onChange={handleInputChange}
-                      disabled={isUkraine ? !formData.communityId : !formData.regionId}
+                      disabled={
+                        isUkraine ? !formData.communityId : !formData.regionId
+                      }
                       className={`appearance-none w-full px-4 py-2 border ${
                         errors.locationId ? "border-red-500" : "border-gray-300"
                       } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                     >
                       <option value="">Виберіть населений пункт</option>
                       {locationStatus === "loading" ? (
-                        <option disabled>Завантаження населених пунктів...</option>
+                        <option disabled>
+                          Завантаження населених пунктів...
+                        </option>
                       ) : (
                         locations?.map((location: any) => (
                           <option key={location.id} value={location.id}>
@@ -831,7 +929,9 @@ const EditListingPage = () => {
                     </div>
                   </div>
                   {errors.locationId && (
-                    <p className="mt-1 text-sm text-red-500">{errors.locationId}</p>
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.locationId}
+                    </p>
                   )}
                 </div>
                 {/* Карта для вибору координат */}
@@ -840,9 +940,12 @@ const EditListingPage = () => {
                     Вкажіть місцезнаходження на карті *
                   </label>
                   <div className="w-full h-64 rounded-md border border-gray-300 overflow-hidden">
-                    <div id="listing-map" style={{ width: "100%", height: "100%" }} />
+                    <div
+                      id="listing-map"
+                      style={{ width: "100%", height: "100%" }}
+                    />
                   </div>
-                  {(latitude && longitude) && (
+                  {latitude && longitude && (
                     <div className="text-xs text-gray-500 mt-1">
                       Координати: {latitude.toFixed(6)}, {longitude.toFixed(6)}
                     </div>
@@ -879,7 +982,8 @@ const EditListingPage = () => {
                       Перетягніть зображення сюди або натисніть, щоб вибрати
                     </p>
                     <p className="text-xs text-gray-500">
-                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10 фото.
+                      Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10
+                      фото.
                     </p>
                   </div>
                   {errors.images && (

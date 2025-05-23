@@ -279,7 +279,7 @@ export const countriesAPI = {
 export const locationsAPI = {
   getRegions: (countryId?: number | string) => {
     if (countryId) {
-      return api.get(`/countries/${countryId}/regions`);
+      return api.get(`/regions/by-country/${countryId}`);
     }
     return api.get("/regions");
   },

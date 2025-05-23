@@ -127,6 +127,8 @@ interface FormData {
   condition: "NEW" | "USED";
   brandId: string;
   brandName: string;
+  priceType: "NETTO" | "BRUTTO";
+  vatIncluded: boolean;
 }
 
 interface FormErrors {
@@ -148,7 +150,7 @@ interface FormErrors {
 const CreateListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
- const mapRef = useRef<any>(null);
+  const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const { categories, status: categoriesStatus } = useAppSelector(
     (state) => state.catalog
@@ -163,7 +165,9 @@ const CreateListingPage = () => {
     status: locationStatus,
   } = useAppSelector((state) => state.locations);
 
-  const [countries, setCountries] = useState<{ id: number; name: string; code: string }[]>([]);
+  const [countries, setCountries] = useState<
+    { id: number; name: string; code: string }[]
+  >([]);
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
@@ -182,6 +186,8 @@ const CreateListingPage = () => {
     condition: "USED",
     brandId: "",
     brandName: "",
+    priceType: "NETTO", // Додаємо тип ціни
+    vatIncluded: false, // Додаємо ПДВ
   });
 
   const [motorizedSpec, setMotorizedSpec] =
@@ -239,7 +245,7 @@ const CreateListingPage = () => {
   }, [dispatch, formData.communityId]);
 
   // --- Карта: Leaflet ---
- // 1. Динамічне підключення leaflet
+  // 1. Динамічне підключення leaflet
   useEffect(() => {
     if (!mapLoaded && typeof window !== "undefined") {
       const leafletCss = document.createElement("link");
@@ -264,8 +270,12 @@ const CreateListingPage = () => {
       !mapRef.current
     ) {
       const L = window.L;
-      const country = countries.find((c) => c.id.toString() === formData.countryId);
-      const center = countryCenters[country?.code || "UA"] || [48.3794, 31.1656];
+      const country = countries.find(
+        (c) => c.id.toString() === formData.countryId
+      );
+      const center = countryCenters[country?.code || "UA"] || [
+        48.3794, 31.1656,
+      ];
       mapRef.current = L.map("listing-map").setView(center, 6);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -276,7 +286,9 @@ const CreateListingPage = () => {
         if (markerRef.current) {
           markerRef.current.setLatLng(e.latlng);
         } else {
-          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(mapRef.current);
+          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(
+            mapRef.current
+          );
           markerRef.current.on("dragend", function (event: any) {
             const latlng = event.target.getLatLng();
             setFormData((prev) => ({
@@ -299,8 +311,12 @@ const CreateListingPage = () => {
   // 3. Зміна центру карти при зміні країни
   useEffect(() => {
     if (mapRef.current && countries.length && formData.countryId) {
-      const country = countries.find((c) => c.id.toString() === formData.countryId);
-      const center = countryCenters[country?.code || "UA"] || [48.3794, 31.1656];
+      const country = countries.find(
+        (c) => c.id.toString() === formData.countryId
+      );
+      const center = countryCenters[country?.code || "UA"] || [
+        48.3794, 31.1656,
+      ];
       mapRef.current.setView(center, 6);
       // Скидаємо маркер при зміні країни
       if (markerRef.current) {
@@ -318,17 +334,14 @@ const CreateListingPage = () => {
 
   // 4. Встановлення маркера, якщо вже є координати
   useEffect(() => {
-    if (
-      mapRef.current &&
-      window.L &&
-      formData.latitude &&
-      formData.longitude
-    ) {
+    if (mapRef.current && window.L && formData.latitude && formData.longitude) {
       const L = window.L;
       if (markerRef.current) {
         markerRef.current.setLatLng([formData.latitude, formData.longitude]);
       } else {
-        markerRef.current = L.marker([formData.latitude, formData.longitude], { draggable: true }).addTo(mapRef.current);
+        markerRef.current = L.marker([formData.latitude, formData.longitude], {
+          draggable: true,
+        }).addTo(mapRef.current);
         markerRef.current.on("dragend", function (event: any) {
           const latlng = event.target.getLatLng();
           setFormData((prev) => ({
@@ -357,7 +370,8 @@ const CreateListingPage = () => {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
 
     if (name === "categoryId") {
       const selectedCategory = categories.find(
@@ -405,6 +419,11 @@ const CreateListingPage = () => {
       setFormData({
         ...formData,
         locationName: value,
+      });
+    } else if (name === "vatIncluded") {
+      setFormData({
+        ...formData,
+        vatIncluded: type === "checkbox" ? !!checked : value === "true",
       });
     } else {
       setFormData({
@@ -526,7 +545,8 @@ const CreateListingPage = () => {
       formDataToSubmit.append("categoryId", formData.categoryId);
       formDataToSubmit.append("countryId", formData.countryId);
       formDataToSubmit.append("regionId", formData.regionId);
-      if (isUkraine) formDataToSubmit.append("communityId", formData.communityId);
+      if (isUkraine)
+        formDataToSubmit.append("communityId", formData.communityId);
       formDataToSubmit.append("locationName", formData.locationName);
       formDataToSubmit.append("latitude", String(formData.latitude ?? ""));
       formDataToSubmit.append("longitude", String(formData.longitude ?? ""));
@@ -535,6 +555,10 @@ const CreateListingPage = () => {
         formData.condition === "NEW" ? "new" : "used"
       );
       formDataToSubmit.append("brandId", formData.brandId);
+
+      // Додаємо нові поля
+      formDataToSubmit.append("priceType", formData.priceType);
+      formDataToSubmit.append("vatIncluded", String(formData.vatIncluded));
 
       if (isMotorized) {
         Object.entries(motorizedSpec).forEach(([key, value]) => {
@@ -705,8 +729,9 @@ const CreateListingPage = () => {
                                   setBrandSearchQuery(brand.name);
                                   setBrandsDropdownOpen(false);
                                   if (errors.brandId) {
-                                    setErrors(prev => {
-                                      const { brandId, ...rest } = prev;
+                                    setErrors((prev) => {
+                                      const { brandId: _brandId, ...rest } =
+                                        prev;
                                       return rest;
                                     });
                                   }
@@ -788,7 +813,7 @@ const CreateListingPage = () => {
                   placeholder={`Наприклад: 1000000 ${getCurrencySymbol(formData.currency)}`}
                   min="0"
                   step="1"
-                  className={`w-3/4 px-4 py-2 border ${
+                  className={`w-2/4 px-4 py-2 border ${
                     errors.price ? "border-red-500" : "border-gray-300"
                   } rounded-l-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
                 />
@@ -798,7 +823,7 @@ const CreateListingPage = () => {
                     name="currency"
                     value={formData.currency}
                     onChange={handleInputChange}
-                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 rounded-r-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="UAH">{getCurrencySymbol("UAH")} UAH</option>
                     <option value="USD">{getCurrencySymbol("USD")} USD</option>
@@ -808,6 +833,34 @@ const CreateListingPage = () => {
                     <ChevronDown size={18} className="text-gray-400" />
                   </div>
                 </div>
+                <div className="relative w-1/4">
+                  <select
+                    id="priceType"
+                    name="priceType"
+                    value={formData.priceType}
+                    onChange={handleInputChange}
+                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 rounded-none focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="NETTO">Нетто (без ПДВ)</option>
+                    <option value="BRUTTO">Брутто (з ПДВ)</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <ChevronDown size={18} className="text-gray-400" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="vatIncluded"
+                  name="vatIncluded"
+                  checked={formData.vatIncluded}
+                  onChange={handleInputChange}
+                  className="mr-2"
+                />
+                <label htmlFor="vatIncluded" className="text-sm text-gray-700">
+                  Включено ПДВ
+                </label>
               </div>
               {errors.price && (
                 <p className="mt-1 text-sm text-red-500">{errors.price}</p>
@@ -815,7 +868,11 @@ const CreateListingPage = () => {
               {formData.price && !errors.price && (
                 <div className="text-sm text-gray-500 mt-1">
                   Буде відображатися як:{" "}
-                  {formatPriceWithSymbol(formData.price, formData.currency)}
+                  {formatPriceWithSymbol(formData.price, formData.currency)}{" "}
+                  {formData.priceType === "BRUTTO"
+                    ? "(Брутто, з ПДВ)"
+                    : "(Нетто, без ПДВ)"}
+                  {formData.vatIncluded ? " (ПДВ включено)" : ""}
                 </div>
               )}
             </div>
@@ -1008,7 +1065,9 @@ const CreateListingPage = () => {
                 />
               </div>
               {errors.locationName && (
-                <p className="mt-1 text-sm text-red-500">{errors.locationName}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.locationName}
+                </p>
               )}
             </div>
             {/* Карта для вибору координат */}
@@ -1017,7 +1076,10 @@ const CreateListingPage = () => {
                 Вкажіть місцезнаходження на карті *
               </label>
               <div className="w-full h-64 rounded-md border border-gray-300 overflow-hidden">
-                <div id="listing-map" style={{ width: "100%", height: "100%" }} />
+                <div
+                  id="listing-map"
+                  style={{ width: "100%", height: "100%" }}
+                />
               </div>
               {errors.latitude && (
                 <p className="mt-1 text-sm text-red-500">
@@ -1026,7 +1088,8 @@ const CreateListingPage = () => {
               )}
               {formData.latitude && formData.longitude && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Координати: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                  Координати: {formData.latitude.toFixed(6)},{" "}
+                  {formData.longitude.toFixed(6)}
                 </div>
               )}
             </div>
