@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchCategories } from "../store/catalogSlice";
@@ -12,7 +12,6 @@ import {
 import { Upload, X, Plus, ChevronDown } from "lucide-react";
 import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
 import { countriesAPI } from "../api/apiClient";
-import { useRef } from "react";
 
 // Add Leaflet to the Window type for TypeScript
 declare global {
@@ -20,13 +19,6 @@ declare global {
     L: any;
   }
 }
-
-// Додайте цей об'єкт для центрів країн
-const countryCenters: Record<string, [number, number]> = {
-  UA: [48.3794, 31.1656], // Україна
-  PL: [52.069167, 19.480556], // Польща
-  // додайте інші країни за потреби
-};
 
 // --- MotorizedSpec тип ---
 interface MotorizedSpecForm {
@@ -166,7 +158,13 @@ const CreateListingPage = () => {
   } = useAppSelector((state) => state.locations);
 
   const [countries, setCountries] = useState<
-    { id: number; name: string; code: string }[]
+    {
+      id: number;
+      name: string;
+      code: string;
+      latitude?: number;
+      longitude?: number;
+    }[]
   >([]);
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -186,8 +184,8 @@ const CreateListingPage = () => {
     condition: "USED",
     brandId: "",
     brandName: "",
-    priceType: "NETTO", // Додаємо тип ціни
-    vatIncluded: false, // Додаємо ПДВ
+    priceType: "NETTO",
+    vatIncluded: false,
   });
 
   const [motorizedSpec, setMotorizedSpec] =
@@ -273,9 +271,10 @@ const CreateListingPage = () => {
       const country = countries.find(
         (c) => c.id.toString() === formData.countryId
       );
-      const center = countryCenters[country?.code || "UA"] || [
-        48.3794, 31.1656,
-      ];
+      const center: [number, number] =
+        country && country.latitude && country.longitude
+          ? [country.latitude, country.longitude]
+          : [48.3794, 31.1656];
       mapRef.current = L.map("listing-map").setView(center, 6);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -306,7 +305,7 @@ const CreateListingPage = () => {
       });
     }
     // eslint-disable-next-line
-  }, [mapLoaded]);
+  }, [mapLoaded, countries, formData.countryId]);
 
   // 3. Зміна центру карти при зміні країни
   useEffect(() => {
@@ -314,9 +313,10 @@ const CreateListingPage = () => {
       const country = countries.find(
         (c) => c.id.toString() === formData.countryId
       );
-      const center = countryCenters[country?.code || "UA"] || [
-        48.3794, 31.1656,
-      ];
+      const center: [number, number] =
+        country && country.latitude && country.longitude
+          ? [country.latitude, country.longitude]
+          : [48.3794, 31.1656];
       mapRef.current.setView(center, 6);
       // Скидаємо маркер при зміні країни
       if (markerRef.current) {
@@ -371,7 +371,8 @@ const CreateListingPage = () => {
     >
   ) => {
     const { name, value, type } = e.target;
-    const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
 
     if (name === "categoryId") {
       const selectedCategory = categories.find(
@@ -515,8 +516,7 @@ const CreateListingPage = () => {
     if (!formData.categoryId) newErrors.categoryId = "Виберіть категорію";
     if (!formData.countryId) newErrors.countryId = "Виберіть країну";
     if (!formData.regionId) newErrors.regionId = "Виберіть область";
-    if (isUkraine && !formData.communityId)
-      newErrors.communityId = "Виберіть громаду";
+    // Громада не обов'язкова!
     if (!formData.locationName?.trim())
       newErrors.locationName = "Введіть населений пункт";
     if (formData.latitude === undefined || formData.longitude === undefined)
@@ -543,11 +543,15 @@ const CreateListingPage = () => {
       formDataToSubmit.append("currency", formData.currency);
       formDataToSubmit.append("category", formData.categoryName);
       formDataToSubmit.append("categoryId", formData.categoryId);
-      formDataToSubmit.append("countryId", formData.countryId);
-      formDataToSubmit.append("regionId", formData.regionId);
-      if (isUkraine)
-        formDataToSubmit.append("communityId", formData.communityId);
-      formDataToSubmit.append("locationName", formData.locationName);
+      formDataToSubmit.append(
+        "location",
+        JSON.stringify({
+          countryId: formData.countryId,
+          regionId: formData.regionId,
+          ...(formData.communityId && { communityId: formData.communityId }),
+          settlement: formData.locationName,
+        })
+      );
       formDataToSubmit.append("latitude", String(formData.latitude ?? ""));
       formDataToSubmit.append("longitude", String(formData.longitude ?? ""));
       formDataToSubmit.append(
@@ -560,13 +564,46 @@ const CreateListingPage = () => {
       formDataToSubmit.append("priceType", formData.priceType);
       formDataToSubmit.append("vatIncluded", String(formData.vatIncluded));
 
+      // Додаємо motorizedSpec з конвертацією числових полів
       if (isMotorized) {
-        Object.entries(motorizedSpec).forEach(([key, value]) => {
-          formDataToSubmit.append(
-            `motorizedSpec.${key}`,
-            value?.toString() ?? ""
-          );
+        const numericFields = [
+          "enginePower",
+          "enginePowerKw",
+          "fuelCapacity",
+          "numberOfGears",
+          "length",
+          "width",
+          "height",
+          "weight",
+          "wheelbase",
+          "groundClearance",
+          "workingWidth",
+          "capacity",
+          "liftCapacity",
+          "ptoSpeed",
+          "hydraulicFlow",
+          "hydraulicPressure",
+          "grainTankCapacity",
+          "headerWidth",
+          "threshingWidth",
+          "cleaningArea",
+          "engineHours",
+          "mileage",
+          "year",
+        ];
+        const motorizedSpecToSend: any = { ...motorizedSpec };
+        numericFields.forEach((key) => {
+          if (
+            motorizedSpecToSend[key] !== undefined &&
+            motorizedSpecToSend[key] !== ""
+          ) {
+            motorizedSpecToSend[key] = Number(motorizedSpecToSend[key]);
+          }
         });
+        formDataToSubmit.append(
+          "motorizedSpec",
+          JSON.stringify(motorizedSpecToSend)
+        );
       }
 
       formData.images.forEach((image) => {
@@ -1206,12 +1243,48 @@ const CreateListingPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Серійний номер
+                </label>
+                <input
+                  type="text"
+                  name="serialNumber"
+                  value={motorizedSpec.serialNumber}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Потужність двигуна (к.с.)
                 </label>
                 <input
                   type="number"
                   name="enginePower"
                   value={motorizedSpec.enginePower}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Потужність двигуна (кВт)
+                </label>
+                <input
+                  type="number"
+                  name="enginePowerKw"
+                  value={motorizedSpec.enginePowerKw}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Модель двигуна
+                </label>
+                <input
+                  type="text"
+                  name="engineModel"
+                  value={motorizedSpec.engineModel}
                   onChange={handleMotorizedSpecChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 />
@@ -1235,6 +1308,356 @@ const CreateListingPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Обʼєм паливного баку (л)
+                </label>
+                <input
+                  type="number"
+                  name="fuelCapacity"
+                  value={motorizedSpec.fuelCapacity}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Трансмісія
+                </label>
+                <input
+                  type="text"
+                  name="transmission"
+                  value={motorizedSpec.transmission}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Кількість передач
+                </label>
+                <input
+                  type="number"
+                  name="numberOfGears"
+                  value={motorizedSpec.numberOfGears}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Довжина (мм)
+                </label>
+                <input
+                  type="number"
+                  name="length"
+                  value={motorizedSpec.length}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ширина (мм)
+                </label>
+                <input
+                  type="number"
+                  name="width"
+                  value={motorizedSpec.width}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Висота (мм)
+                </label>
+                <input
+                  type="number"
+                  name="height"
+                  value={motorizedSpec.height}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Вага (кг)
+                </label>
+                <input
+                  type="number"
+                  name="weight"
+                  value={motorizedSpec.weight}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Колісна база (мм)
+                </label>
+                <input
+                  type="number"
+                  name="wheelbase"
+                  value={motorizedSpec.wheelbase}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Дорожній просвіт (мм)
+                </label>
+                <input
+                  type="number"
+                  name="groundClearance"
+                  value={motorizedSpec.groundClearance}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Робоча ширина (мм)
+                </label>
+                <input
+                  type="number"
+                  name="workingWidth"
+                  value={motorizedSpec.workingWidth}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ємність (л)
+                </label>
+                <input
+                  type="number"
+                  name="capacity"
+                  value={motorizedSpec.capacity}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Підйомна сила (кг)
+                </label>
+                <input
+                  type="number"
+                  name="liftCapacity"
+                  value={motorizedSpec.liftCapacity}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Трьохточкове навішування
+                </label>
+                <input
+                  type="checkbox"
+                  name="threePtHitch"
+                  checked={motorizedSpec.threePtHitch}
+                  onChange={handleMotorizedSpecChange}
+                  className="mr-2"
+                />
+                <span>Так</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ВВП (вал відбору потужності)
+                </label>
+                <input
+                  type="checkbox"
+                  name="pto"
+                  checked={motorizedSpec.pto}
+                  onChange={handleMotorizedSpecChange}
+                  className="mr-2"
+                />
+                <span>Так</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Швидкість ВВП (об/хв)
+                </label>
+                <input
+                  type="number"
+                  name="ptoSpeed"
+                  value={motorizedSpec.ptoSpeed}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Передній міст
+                </label>
+                <input
+                  type="text"
+                  name="frontAxle"
+                  value={motorizedSpec.frontAxle}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Задній міст
+                </label>
+                <input
+                  type="text"
+                  name="rearAxle"
+                  value={motorizedSpec.rearAxle}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Розмір передніх шин
+                </label>
+                <input
+                  type="text"
+                  name="frontTireSize"
+                  value={motorizedSpec.frontTireSize}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Розмір задніх шин
+                </label>
+                <input
+                  type="text"
+                  name="rearTireSize"
+                  value={motorizedSpec.rearTireSize}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Продуктивність гідравліки (л/хв)
+                </label>
+                <input
+                  type="number"
+                  name="hydraulicFlow"
+                  value={motorizedSpec.hydraulicFlow}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Тиск гідравліки (бар)
+                </label>
+                <input
+                  type="number"
+                  name="hydraulicPressure"
+                  value={motorizedSpec.hydraulicPressure}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ємність зернового бункера (л)
+                </label>
+                <input
+                  type="number"
+                  name="grainTankCapacity"
+                  value={motorizedSpec.grainTankCapacity}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ширина жатки (мм)
+                </label>
+                <input
+                  type="number"
+                  name="headerWidth"
+                  value={motorizedSpec.headerWidth}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ширина молотильного барабана (мм)
+                </label>
+                <input
+                  type="number"
+                  name="threshingWidth"
+                  value={motorizedSpec.threshingWidth}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Площа очищення (м²)
+                </label>
+                <input
+                  type="number"
+                  name="cleaningArea"
+                  value={motorizedSpec.cleaningArea}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Напрацювання двигуна (м/г)
+                </label>
+                <input
+                  type="number"
+                  name="engineHours"
+                  value={motorizedSpec.engineHours}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Пробіг (км)
+                </label>
+                <input
+                  type="number"
+                  name="mileage"
+                  value={motorizedSpec.mileage}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Дата останнього ТО
+                </label>
+                <input
+                  type="date"
+                  name="lastServiceDate"
+                  value={motorizedSpec.lastServiceDate}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Дата наступного ТО
+                </label>
+                <input
+                  type="date"
+                  name="nextServiceDate"
+                  value={motorizedSpec.nextServiceDate}
+                  onChange={handleMotorizedSpecChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   В робочому стані
                 </label>
                 <input
@@ -1246,7 +1669,6 @@ const CreateListingPage = () => {
                 />
                 <span>Так</span>
               </div>
-              {/* Додайте інші поля за потреби */}
             </div>
           </div>
         )}
