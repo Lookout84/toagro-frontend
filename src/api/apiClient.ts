@@ -135,14 +135,18 @@ export const listingsAPI = {
     return api.get("/listings/user/me");
   },
 
-  create: (formData: {
-    name: string;
-    description: string;
-    price: number;
-    categoryId: number;
-  }) => {
-    return api.post("/listings", formData);
-  },
+  create: (data: FormData) =>
+    api.post("/listings", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  // create: (formData: {
+  //   name: string;
+  //   description: string;
+  //   price: number;
+  //   categoryId: number;
+  // }) => {
+  //   return api.post("/listings", formData);
+  // },
 
   update: (id: number, formData: FormData) => {
     return api.put(`/listings/${id}`, formData, {

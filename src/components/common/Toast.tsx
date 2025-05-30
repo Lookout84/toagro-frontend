@@ -31,6 +31,7 @@ const Toast: React.FC<ToastProps> = ({
       
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [duration, id, onClose]);
   
   // Варіанти іконок і кольорів для різних типів сповіщень

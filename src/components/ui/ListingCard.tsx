@@ -18,6 +18,18 @@ const ListingCard = ({
 }: ListingCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const renderLocation = (locationObj: any) => {
+    if (!locationObj) return "Місце не вказано";
+    if (typeof locationObj === "string") return locationObj;
+    const parts = [
+      locationObj.settlement,
+      locationObj.community?.name,
+      locationObj.region?.name,
+      locationObj.country?.name,
+    ].filter((part) => typeof part === "string" && part.trim().length > 0);
+    return parts.length ? parts.join(", ") : "Місце не вказано";
+  };
+
   // Обробник кліку на кнопку "В обране"
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -108,7 +120,7 @@ const ListingCard = ({
         <div className="flex flex-col space-y-1 text-sm text-gray-500">
           <div className="flex items-center">
             <MapPin size={14} className="mr-1" />
-            <span>{listing.location}</span>
+            <span>{renderLocation(listing.location)}</span>
           </div>
 
           <div className="flex items-center">

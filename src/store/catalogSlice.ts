@@ -21,6 +21,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  priceType?: "BRUTTO" | "NETTO" | string;
   currency: "UAH" | "USD" | "EUR"; // Додаємо поле валюти
   location: string;
   condition: "NEW" | "USED";
@@ -32,6 +33,7 @@ export interface Listing {
   createdAt: string;
   updatedAt: string;
   user: {
+    phoneNumber: any;
     id: number;
     name: string;
     avatar?: string;

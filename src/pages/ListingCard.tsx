@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Heart, Scale, MapPin, Calendar } from "lucide-react";
 import { Listing } from "../store/catalogSlice";
 import { formatDate } from "../utils/formatters";
-// import { formatPriceWithSymbol } from "../utils/formatters";
 
 interface ListingCardProps {
   listing: Listing;
@@ -12,25 +11,47 @@ interface ListingCardProps {
   isSelected?: boolean;
 }
 
-console.log("!!! ListingCard module loaded");
 const ListingCard = ({
   listing,
   compareEnabled = false,
   onToggleCompare,
   isSelected = false,
 }: ListingCardProps) => {
-  console.log("Listing in card:", listing);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Додано логування для відладки
-  console.log("Listing data in card:", listing);
-  console.log("Price:", listing.price, "Currency:", listing.currency);
+  // Форматування location
+  const renderLocation = (locationObj: any) => {
+  if (!locationObj) return "Місце не вказано";
+  if (typeof locationObj === "string") return locationObj;
+  const parts = [
+    locationObj.settlement ?? "",
+    locationObj.community?.name ?? "",
+    locationObj.region?.name ?? "",
+    locationObj.country?.name ?? "",
+  ]
+    .filter((part) => typeof part === "string" && part.trim().length > 0);
+  return parts.length ? parts.join(", ") : "Місце не вказано";
+};
 
+const formatLocation = (location: any) => {
+  if (!location) return "Місцезнаходження не вказано";
+  
+  if (typeof location === "string") return location;
+  
+  const parts = [
+    location.settlement,
+    location.community?.name,
+    location.region?.name, 
+    location.country?.name
+  ].filter(Boolean);
+  
+  return parts.length > 0 ? parts.join(", ") : "Місцезнаходження не вказано";
+};
   // Обробник кліку на кнопку "В обране"
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
+    setIsFavorite((prev) => !prev);
   };
 
   // Обробник кліку на кнопку "Порівняти"
@@ -42,17 +63,15 @@ const ListingCard = ({
     }
   };
 
-  // Тип для можливих форматів зображення
-  type ListingImage = string | { url?: string; path?: string; src?: string };
-
   // Безпечне отримання URL зображення
   const getImageUrl = () => {
     if (!listing.images || listing.images.length === 0) {
       return "https://via.placeholder.com/300x200?text=Немає+фото";
     }
-
-    const firstImage = listing.images[0] as ListingImage;
-
+    // Явно вказуємо тип для елемента зображення
+    const firstImage = listing.images[0] as
+      | string
+      | { url?: string; path?: string; src?: string };
     if (typeof firstImage === "string") {
       return firstImage;
     } else if (firstImage && typeof firstImage === "object") {
@@ -82,8 +101,6 @@ const ListingCard = ({
               "https://via.placeholder.com/300x200?text=Помилка+завантаження";
           }}
         />
-
-        {/* Кнопки дій */}
         <div className="absolute top-2 right-2 flex flex-col gap-2">
           <button
             onClick={handleFavoriteClick}
@@ -95,7 +112,6 @@ const ListingCard = ({
           >
             <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
           </button>
-
           {compareEnabled && (
             <button
               onClick={handleCompareClick}
@@ -116,8 +132,6 @@ const ListingCard = ({
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
           {listing.title || "Оголошення без назви"}
         </h3>
-
-        {/* Виправлено відображення ціни з валютою, завжди використовуємо currency з бази даних */}
         <p className="text-xl font-bold text-gray-900 mb-2">
           {listing.price !== undefined && listing.price !== null
             ? (() => {
@@ -135,26 +149,25 @@ const ListingCard = ({
                 if (normalizedCurrency === "USD") currencySymbol = "$";
                 else if (normalizedCurrency === "EUR") currencySymbol = "€";
                 const result = `${formattedPrice} ${currencySymbol}`;
-                console.log(
-                  "Rendered price:",
-                  result,
-                  "currency:",
-                  listing.currency
-                );
                 return result;
               })()
             : "Ціна не вказана"}
+          <span className="ml-2 text-xs text-gray-500">
+            {listing.priceType === "BRUTTO"
+              ? "(з ПДВ)"
+              : listing.priceType === "NETTO"
+              ? "(без ПДВ)"
+              : ""}
+          </span>
         </p>
         <p className="text-gray-600 mb-3 text-sm line-clamp-2">
           {listing.description || "Опис відсутній"}
         </p>
-
         <div className="flex flex-col space-y-1 text-sm text-gray-500">
           <div className="flex items-center">
             <MapPin size={14} className="mr-1" />
-            <span>{listing.location || "Місце не вказано"}</span>
+            <span>{formatLocation(renderLocation(listing.location))}</span>
           </div>
-
           <div className="flex items-center">
             <Calendar size={14} className="mr-1" />
             <span>

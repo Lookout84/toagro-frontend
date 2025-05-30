@@ -2,6 +2,8 @@ export interface User {
     id: string;
     name: string;
     avatar?: string;
+    phoneNumber?: string;
+    email?: string;
   }
   
   export interface Message {

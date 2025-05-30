@@ -16,12 +16,35 @@ import {
   Calendar,
   Eye,
   Phone,
-  Mail,
   User,
   MessageSquare,
 } from "lucide-react";
 import Loader from "../components/common/Loader";
 import ListingCard from "../components/ui/ListingCard";
+
+type ListingUser = {
+  id: number;
+  name: string;
+  avatar?: string;
+  phoneNumber?: string | null;
+  email?: string | null;
+};
+
+type Listing = {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  priceType?: string;
+  currency?: string;
+  images: string[];
+  location: any;
+  category: string;
+  categoryId: number;
+  createdAt: string;
+  views: number;
+  user: ListingUser; // Ensures user always has phoneNumber, email, etc.
+};
 
 const ListingDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +52,7 @@ const ListingDetailsPage = () => {
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAuth();
 
-  const { currentListing, similarListings, isLoading } = useAppSelector(
+  const { currentListing, similarListings, userListings, isLoading } = useAppSelector(
     (state) => state.listing
   );
 
@@ -39,57 +62,57 @@ const ListingDetailsPage = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Функція для форматування location
+  const renderLocation = (locationObj: any) => {
+    if (!locationObj) return "Місце не вказано";
+    if (typeof locationObj === "string") return locationObj;
+    const parts = [
+      locationObj.settlement,
+      locationObj.community?.name,
+      locationObj.region?.name,
+      locationObj.country?.name,
+    ].filter((part) => typeof part === "string" && part.trim().length > 0);
+    return parts.length ? parts.join(", ") : "Місце не вказано";
+  };
+
   // Завантаження оголошення
   useEffect(() => {
     if (id) {
       dispatch(fetchListingById(parseInt(id)));
     }
-
-    // Повернення до верху сторінки
     window.scrollTo(0, 0);
-
-    // Очищення при розмонтуванні
-    return () => {
-      // Очищення даних, якщо потрібно
-    };
+    return () => {};
   }, [id, dispatch]);
 
   // Завантаження схожих оголошень
   useEffect(() => {
     if (currentListing) {
+      // Завантаження схожих оголошень
       const fetchSimilarListings = async () => {
         try {
-          // Отримуємо оголошення з тієї самої категорії
           const response = await listingsAPI.getAll({
             categoryId: currentListing.categoryId,
             limit: 4,
-            // Виключаємо поточне оголошення
             exclude: currentListing.id,
           });
-
           dispatch(setSimilarListings(response.data.data.listings));
         } catch (error) {
           console.error("Error fetching similar listings:", error);
         }
       };
-
+      
       fetchSimilarListings();
     }
   }, [currentListing, dispatch]);
 
-  // Обробник переключення зображень
-  const handleImageChange = (index: number) => {
-    setActiveImageIndex(index);
-  };
+  const handleImageChange = (index: number) => setActiveImageIndex(index);
 
-  // Перехід до наступного зображення
   const handleNextImage = () => {
     if (currentListing && currentListing.images.length > 0) {
       setActiveImageIndex((prev) => (prev + 1) % currentListing.images.length);
     }
   };
 
-  // Перехід до попереднього зображення
   const handlePrevImage = () => {
     if (currentListing && currentListing.images.length > 0) {
       setActiveImageIndex(
@@ -100,36 +123,25 @@ const ListingDetailsPage = () => {
     }
   };
 
-  // Обробник для додавання/видалення з обраного
   const handleToggleFavorite = () => {
     setIsFavorite(!isFavorite);
     // TODO: Інтеграція з API для обраного
   };
 
-  // Обробник для відправки повідомлення
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!isAuthenticated) {
-      navigate("/login", {
-        state: { from: `/listings/${id}` },
-      });
+      navigate("/login", { state: { from: `/listings/${id}` } });
       return;
     }
-
-    if (!messageText.trim() || !currentListing) {
-      return;
-    }
-
+    if (!messageText.trim() || !currentListing) return;
     setIsSendingMessage(true);
-
     try {
       await chatAPI.sendMessage(
         currentListing.user.id,
         messageText,
         currentListing.id
       );
-
       setMessageText("");
       navigate(`/chat/${currentListing.user.id}`);
     } catch (error) {
@@ -139,12 +151,8 @@ const ListingDetailsPage = () => {
     }
   };
 
-  // Обробник для друку оголошення
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
-  // Обробник для поширення оголошення
   const handleShare = () => {
     if (navigator.share) {
       navigator
@@ -155,13 +163,11 @@ const ListingDetailsPage = () => {
         })
         .catch((error) => console.error("Error sharing:", error));
     } else {
-      // Копіювання URL у буфер обміну
       navigator.clipboard.writeText(window.location.href);
       // TODO: Показати повідомлення про копіювання
     }
   };
 
-  // Форматування дати
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("uk-UA", {
       day: "numeric",
@@ -170,17 +176,27 @@ const ListingDetailsPage = () => {
     });
   };
 
-  // Форматування ціни
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("uk-UA", {
-      style: "currency",
-      currency: "UAH",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
+    if (price === undefined || price === null) return "Ціна не вказана";
+
+    const numericPrice = typeof price === "string" ? parseFloat(price) : price;
+    
+    // Форматування ціни
+    const formattedPrice = new Intl.NumberFormat("uk-UA").format(numericPrice);
+    
+    // Визначення валюти
+    const normalizedCurrency = currentListing?.currency 
+      ? currentListing.currency.toUpperCase().trim()
+      : "UAH";
+      
+    let currencySymbol = "₴";
+    if (normalizedCurrency === "USD") currencySymbol = "$";
+    else if (normalizedCurrency === "EUR") currencySymbol = "€";
+    
+    // Формування повного тексту ціни
+    return `${formattedPrice} ${currencySymbol}`;
   };
 
-  // Перевірка, чи оголошення належить поточному користувачу
   const isOwner =
     user &&
     currentListing &&
@@ -243,7 +259,6 @@ const ListingDetailsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
           {/* Галерея зображень */}
           <div>
-            {/* Основне зображення */}
             <div className="relative aspect-w-4 aspect-h-3 bg-gray-100 rounded-lg overflow-hidden mb-4">
               <img
                 src={
@@ -253,8 +268,6 @@ const ListingDetailsPage = () => {
                 alt={currentListing.title}
                 className="object-contain w-full h-full"
               />
-
-              {/* Кнопки навігації */}
               {currentListing.images.length > 1 && (
                 <>
                   <button
@@ -272,8 +285,6 @@ const ListingDetailsPage = () => {
                 </>
               )}
             </div>
-
-            {/* Мініатюри */}
             {currentListing.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {currentListing.images.map((image, index) => (
@@ -305,12 +316,18 @@ const ListingDetailsPage = () => {
 
             <div className="text-2xl font-bold text-gray-900 mb-4">
               {formatPrice(currentListing.price)}
+              {currentListing.priceType && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  {currentListing.priceType === "BRUTTO" ? "(з ПДВ)" : 
+                   currentListing.priceType === "NETTO" ? "(без ПДВ)" : ""}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center space-x-6 text-sm text-gray-600 mb-6">
               <div className="flex items-center">
                 <MapPin size={16} className="mr-1 text-green-600" />
-                <span>{currentListing.location}</span>
+                <span>{renderLocation(currentListing.location)}</span>
               </div>
               <div className="flex items-center">
                 <Calendar size={16} className="mr-1 text-green-600" />
@@ -394,30 +411,40 @@ const ListingDetailsPage = () => {
                 <h3 className="font-medium text-gray-900 mb-3">
                   Контактна інформація
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <User size={18} className="text-green-600 mr-2" />
-                    <span>{currentListing.user.name}</span>
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <User size={18} className="text-green-600 mr-2" />
+                      <span>{currentListing.user?.name || "Продавець"}</span>
+                    </div>
+                    {currentListing.user?.phoneNumber ? (
+                      <div className="flex items-center">
+                        <Phone size={18} className="text-green-600 mr-2" />
+                        <a
+                          href={`tel:${currentListing.user.phoneNumber}`}
+                          className="text-green-600 hover:underline"
+                        >
+                          {currentListing.user.phoneNumber}
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">
+                        Номер телефону не вказано
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center">
-                    <Phone size={18} className="text-green-600 mr-2" />
-                    <a
-                      href="tel:+380501234567"
+                ) : (
+                  <div className="text-center text-gray-600">
+                    Щоб переглянути контакти,{" "}
+                    <Link
+                      to="/login"
                       className="text-green-600 hover:underline"
                     >
-                      +380 50 123 45 67
-                    </a>
+                      увійдіть у свій акаунт
+                    </Link>
+                    .
                   </div>
-                  <div className="flex items-center">
-                    <Mail size={18} className="text-green-600 mr-2" />
-                    <a
-                      href="mailto:user@example.com"
-                      className="text-green-600 hover:underline"
-                    >
-                      user@example.com
-                    </a>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -482,13 +509,12 @@ const ListingDetailsPage = () => {
               {currentListing.description}
             </p>
           </div>
-
           {/* TODO: Додаткові характеристики, якщо вони є */}
         </div>
       </div>
 
       {/* Схожі оголошення */}
-      {similarListings.length > 0 && (
+      {similarListings && similarListings.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Схожі оголошення
@@ -497,6 +523,28 @@ const ListingDetailsPage = () => {
             {similarListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Інші оголошення продавця */}
+      {userListings && userListings.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Інші оголошення продавця
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {userListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <Link 
+              to={`/catalog?userId=${currentListing.user.id}`} 
+              className="text-green-600 hover:underline"
+            >
+              Переглянути всі оголошення продавця
+            </Link>
           </div>
         </div>
       )}

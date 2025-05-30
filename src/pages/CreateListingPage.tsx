@@ -1,17 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchCategories } from "../store/catalogSlice";
 import { fetchBrands } from "../store/brandSlice";
 import { createListing } from "../store/listingSlice";
-import {
-  fetchRegions,
-  fetchCommunities,
-  fetchLocations,
-} from "../store/locationSlice";
-import { Upload, X, Plus, ChevronDown } from "lucide-react";
-import { formatPriceWithSymbol, getCurrencySymbol } from "../utils/formatters";
+import { fetchRegions } from "../store/locationSlice";
 import { countriesAPI } from "../api/apiClient";
+import MotorizedSpecFormComponent, {
+  initialMotorizedSpec,
+  MotorizedSpecForm as MotorizedSpecFormType,
+} from "../components/ui/MotorizedSpecForm";
+import CategorySelector from "../components/ui/CategorySelector";
+import BrandSelector from "../components/ui/BrandSelector";
+import PriceInput from "../components/ui/PriceInput";
+import ImageUploader from "../components/ui/ImageUploader";
+import LocationSelector from "../components/ui/LocationSelector";
 
 // Add Leaflet to the Window type for TypeScript
 declare global {
@@ -19,87 +22,6 @@ declare global {
     L: any;
   }
 }
-
-// --- MotorizedSpec тип ---
-interface MotorizedSpecForm {
-  model: string;
-  year: string;
-  serialNumber: string;
-  enginePower: string;
-  enginePowerKw: string;
-  engineModel: string;
-  fuelType: string;
-  fuelCapacity: string;
-  transmission: string;
-  numberOfGears: string;
-  length: string;
-  width: string;
-  height: string;
-  weight: string;
-  wheelbase: string;
-  groundClearance: string;
-  workingWidth: string;
-  capacity: string;
-  liftCapacity: string;
-  threePtHitch: boolean;
-  pto: boolean;
-  ptoSpeed: string;
-  frontAxle: string;
-  rearAxle: string;
-  frontTireSize: string;
-  rearTireSize: string;
-  hydraulicFlow: string;
-  hydraulicPressure: string;
-  grainTankCapacity: string;
-  headerWidth: string;
-  threshingWidth: string;
-  cleaningArea: string;
-  engineHours: string;
-  mileage: string;
-  lastServiceDate: string;
-  nextServiceDate: string;
-  isOperational: boolean;
-}
-
-const initialMotorizedSpec: MotorizedSpecForm = {
-  model: "",
-  year: "",
-  serialNumber: "",
-  enginePower: "",
-  enginePowerKw: "",
-  engineModel: "",
-  fuelType: "DIESEL",
-  fuelCapacity: "",
-  transmission: "MANUAL",
-  numberOfGears: "",
-  length: "",
-  width: "",
-  height: "",
-  weight: "",
-  wheelbase: "",
-  groundClearance: "",
-  workingWidth: "",
-  capacity: "",
-  liftCapacity: "",
-  threePtHitch: false,
-  pto: false,
-  ptoSpeed: "",
-  frontAxle: "",
-  rearAxle: "",
-  frontTireSize: "",
-  rearTireSize: "",
-  hydraulicFlow: "",
-  hydraulicPressure: "",
-  grainTankCapacity: "",
-  headerWidth: "",
-  threshingWidth: "",
-  cleaningArea: "",
-  engineHours: "",
-  mileage: "",
-  lastServiceDate: "",
-  nextServiceDate: "",
-  isOperational: true,
-};
 
 interface FormData {
   title: string;
@@ -134,7 +56,7 @@ interface FormErrors {
   locationId?: string;
   locationName?: string;
   images?: string | undefined;
-  brandId?: string;
+  brandId?: string | undefined;
   latitude?: string;
   longitude?: string;
 }
@@ -142,20 +64,10 @@ interface FormErrors {
 const CreateListingPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const { categories, status: categoriesStatus } = useAppSelector(
+  const { categories } = useAppSelector(
     (state) => state.catalog
   );
-  const { brands, status: brandsStatus } = useAppSelector(
-    (state) => state.brands
-  );
   const { isLoading } = useAppSelector((state) => state.listing);
-  const {
-    regions,
-    communities,
-    status: locationStatus,
-  } = useAppSelector((state) => state.locations);
 
   const [countries, setCountries] = useState<
     {
@@ -166,6 +78,7 @@ const CreateListingPage = () => {
       longitude?: number;
     }[]
   >([]);
+
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
@@ -189,61 +102,29 @@ const CreateListingPage = () => {
   });
 
   const [motorizedSpec, setMotorizedSpec] =
-    useState<MotorizedSpecForm>(initialMotorizedSpec);
+    useState<MotorizedSpecFormType>(initialMotorizedSpec);
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [brandSearchQuery, setBrandSearchQuery] = useState<string>("");
-  const [brandsDropdownOpen, setBrandsDropdownOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // --- Карта ---
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     if (categories.length === 0) dispatch(fetchCategories());
-    if (brands.length === 0) dispatch(fetchBrands());
-    countriesAPI.getAll().then((res) => {
-      setCountries(res.data.data || []);
-    });
-  }, [dispatch, categories.length, brands.length]);
+    if (!countries.length) {
+      dispatch(fetchBrands());
+      countriesAPI.getAll().then((res) => {
+        setCountries(res.data.data || []);
+      });
+    }
+  }, [dispatch, categories.length, countries.length]);
 
   useEffect(() => {
     if (formData.countryId) {
       dispatch(fetchRegions(formData.countryId));
-      setFormData((prev) => ({
-        ...prev,
-        regionId: "",
-        communityId: "",
-        locationId: "",
-      }));
     }
   }, [dispatch, formData.countryId]);
 
-  useEffect(() => {
-    if (formData.regionId) {
-      dispatch(fetchCommunities(formData.regionId));
-      setFormData((prev) => ({
-        ...prev,
-        communityId: "",
-        locationId: "",
-      }));
-    }
-  }, [dispatch, formData.regionId]);
-
-  useEffect(() => {
-    if (formData.communityId) {
-      dispatch(fetchLocations(formData.communityId));
-      setFormData((prev) => ({
-        ...prev,
-        locationId: "",
-      }));
-    }
-  }, [dispatch, formData.communityId]);
-
-  // --- Карта: Leaflet ---
-  // 1. Динамічне підключення leaflet
+  // Динамічне підключення Leaflet
   useEffect(() => {
     if (!mapLoaded && typeof window !== "undefined") {
       const leafletCss = document.createElement("link");
@@ -259,111 +140,10 @@ const CreateListingPage = () => {
     }
   }, [mapLoaded]);
 
-  // 2. Ініціалізація карти лише один раз
-  useEffect(() => {
-    if (
-      mapLoaded &&
-      window.L &&
-      document.getElementById("listing-map") &&
-      !mapRef.current
-    ) {
-      const L = window.L;
-      const country = countries.find(
-        (c) => c.id.toString() === formData.countryId
-      );
-      const center: [number, number] =
-        country && country.latitude && country.longitude
-          ? [country.latitude, country.longitude]
-          : [48.3794, 31.1656];
-      mapRef.current = L.map("listing-map").setView(center, 6);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://osm.org/copyright">OSM</a>',
-      }).addTo(mapRef.current);
-
-      mapRef.current.on("click", function (e: any) {
-        if (markerRef.current) {
-          markerRef.current.setLatLng(e.latlng);
-        } else {
-          markerRef.current = L.marker(e.latlng, { draggable: true }).addTo(
-            mapRef.current
-          );
-          markerRef.current.on("dragend", function (event: any) {
-            const latlng = event.target.getLatLng();
-            setFormData((prev) => ({
-              ...prev,
-              latitude: latlng.lat,
-              longitude: latlng.lng,
-            }));
-          });
-        }
-        setFormData((prev) => ({
-          ...prev,
-          latitude: e.latlng.lat,
-          longitude: e.latlng.lng,
-        }));
-      });
-    }
-    // eslint-disable-next-line
-  }, [mapLoaded, countries, formData.countryId]);
-
-  // 3. Зміна центру карти при зміні країни
-  useEffect(() => {
-    if (mapRef.current && countries.length && formData.countryId) {
-      const country = countries.find(
-        (c) => c.id.toString() === formData.countryId
-      );
-      const center: [number, number] =
-        country && country.latitude && country.longitude
-          ? [country.latitude, country.longitude]
-          : [48.3794, 31.1656];
-      mapRef.current.setView(center, 6);
-      // Скидаємо маркер при зміні країни
-      if (markerRef.current) {
-        mapRef.current.removeLayer(markerRef.current);
-        markerRef.current = null;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        latitude: undefined,
-        longitude: undefined,
-      }));
-    }
-    // eslint-disable-next-line
-  }, [formData.countryId, countries]);
-
-  // 4. Встановлення маркера, якщо вже є координати
-  useEffect(() => {
-    if (mapRef.current && window.L && formData.latitude && formData.longitude) {
-      const L = window.L;
-      if (markerRef.current) {
-        markerRef.current.setLatLng([formData.latitude, formData.longitude]);
-      } else {
-        markerRef.current = L.marker([formData.latitude, formData.longitude], {
-          draggable: true,
-        }).addTo(mapRef.current);
-        markerRef.current.on("dragend", function (event: any) {
-          const latlng = event.target.getLatLng();
-          setFormData((prev) => ({
-            ...prev,
-            latitude: latlng.lat,
-            longitude: latlng.lng,
-          }));
-        });
-      }
-      mapRef.current.setView([formData.latitude, formData.longitude], 12);
-    }
-    // eslint-disable-next-line
-  }, [formData.latitude, formData.longitude]);
-
   const selectedCategoryObj = categories.find(
     (cat) => cat.id === Number(formData.categoryId)
   );
   const isMotorized = selectedCategoryObj?.isMotorized ?? false;
-
-  const isUkraine =
-    countries.find((c) => c.id.toString() === formData.countryId)?.code ===
-    "UA";
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -382,44 +162,6 @@ const CreateListingPage = () => {
         ...formData,
         [name]: value,
         categoryName: selectedCategory ? selectedCategory.name : "",
-      });
-    } else if (name === "brandId") {
-      const selectedBrand = brands.find((brand) => brand.id === Number(value));
-      setFormData({
-        ...formData,
-        [name]: value,
-        brandName: selectedBrand ? selectedBrand.name : "",
-      });
-    } else if (name === "countryId") {
-      setFormData({
-        ...formData,
-        countryId: value,
-        regionId: "",
-        communityId: "",
-        locationId: "",
-      });
-    } else if (name === "regionId") {
-      setFormData({
-        ...formData,
-        regionId: value,
-        communityId: "",
-        locationId: "",
-      });
-    } else if (name === "communityId") {
-      setFormData({
-        ...formData,
-        communityId: value,
-        locationId: "",
-      });
-    } else if (name === "locationId") {
-      setFormData({
-        ...formData,
-        locationId: value,
-      });
-    } else if (name === "locationName") {
-      setFormData({
-        ...formData,
-        locationName: value,
       });
     } else if (name === "vatIncluded") {
       setFormData({
@@ -452,52 +194,88 @@ const CreateListingPage = () => {
     }));
   };
 
-  const handleBrandSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBrandSearchQuery(e.target.value);
-    setBrandsDropdownOpen(true);
-  };
+  const handleLocationChange = (name: string, value: string | number) => {
+    if (name === "countryId") {
+      setFormData({
+        ...formData,
+        countryId: String(value),
+        regionId: "",
+        communityId: "",
+        locationId: "",
+      });
+    } else if (name === "regionId") {
+      setFormData({
+        ...formData,
+        regionId: String(value),
+        communityId: "",
+        locationId: "",
+      });
+    } else if (name === "communityId") {
+      setFormData({
+        ...formData,
+        communityId: String(value),
+        locationId: "",
+      });
+    } else if (name === "latitude" || name === "longitude") {
+      setFormData({
+        ...formData,
+        [name]: typeof value === "number" ? value : parseFloat(value),
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: String(value),
+      });
+    }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    handleFiles(Array.from(files));
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    if (e.dataTransfer.files.length > 0) {
-      handleFiles(Array.from(e.dataTransfer.files));
+    if (errors[name as keyof FormErrors]) {
+      setErrors({
+        ...errors,
+        [name]: undefined,
+      });
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
+  const handleBrandSelect = (brandId: string, brandName: string) => {
+    setFormData({
+      ...formData,
+      brandId,
+      brandName,
+    });
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+    if (errors.brandId) {
+      setErrors({
+        ...errors,
+        brandId: undefined,
+      });
+    }
   };
 
   const handleRemoveImage = (index: number) => {
     const newImages = [...formData.images];
     newImages.splice(index, 1);
 
-    const newPreviewUrls = [...imagePreviewUrls];
-    newPreviewUrls.splice(index, 1);
-
     setFormData({
       ...formData,
       images: newImages,
     });
+  };
 
-    setImagePreviewUrls(newPreviewUrls);
+  const handleImagesChange = (newImages: (File | string)[]) => {
+    // Filter out string images as they're handled separately
+    const fileImages = newImages.filter((img): img is File => img instanceof File);
+    
+    setFormData({
+      ...formData,
+      images: fileImages,
+    });
+
+    if (errors.images) {
+      setErrors({
+        ...errors,
+        images: undefined,
+      });
+    }
   };
 
   const validateForm = (): boolean => {
@@ -537,77 +315,122 @@ const CreateListingPage = () => {
 
     try {
       const formDataToSubmit = new FormData();
+
+      // Базова інформація
       formDataToSubmit.append("title", formData.title);
       formDataToSubmit.append("description", formData.description);
       formDataToSubmit.append("price", formData.price);
       formDataToSubmit.append("currency", formData.currency);
       formDataToSubmit.append("category", formData.categoryName);
       formDataToSubmit.append("categoryId", formData.categoryId);
-      formDataToSubmit.append(
-        "location",
-        JSON.stringify({
-          countryId: formData.countryId,
-          regionId: formData.regionId,
-          ...(formData.communityId && { communityId: formData.communityId }),
-          settlement: formData.locationName,
-        })
-      );
-      formDataToSubmit.append("latitude", String(formData.latitude ?? ""));
-      formDataToSubmit.append("longitude", String(formData.longitude ?? ""));
-      formDataToSubmit.append(
-        "condition",
-        formData.condition === "NEW" ? "new" : "used"
-      );
+
+      // Виправлено: Перевіряємо, що числа відправляються як числа, а не порожні рядки
+      if (formData.latitude !== undefined && formData.longitude !== undefined) {
+        formDataToSubmit.append("latitude", String(formData.latitude));
+        formDataToSubmit.append("longitude", String(formData.longitude));
+      }
+
+      // Виправлено: відправляємо condition у правильному форматі
+      formDataToSubmit.append("condition", formData.condition);
       formDataToSubmit.append("brandId", formData.brandId);
+
+      // Виправлено: Переконуємося що всі поля JSON правильно сформовані
+      const locationData = {
+        countryId: Number(formData.countryId),
+        regionId: Number(formData.regionId),
+        ...(formData.communityId
+          ? { communityId: Number(formData.communityId) }
+          : {}),
+        settlement: formData.locationName,
+      };
+      formDataToSubmit.append("location", JSON.stringify(locationData));
 
       // Додаємо нові поля
       formDataToSubmit.append("priceType", formData.priceType);
       formDataToSubmit.append("vatIncluded", String(formData.vatIncluded));
 
-      // Додаємо motorizedSpec з конвертацією числових полів
+      // Виправлено: Переконуємося що motorizedSpec правильно конвертується
       if (isMotorized) {
-        const numericFields = [
-          "enginePower",
-          "enginePowerKw",
-          "fuelCapacity",
-          "numberOfGears",
-          "length",
-          "width",
-          "height",
-          "weight",
-          "wheelbase",
-          "groundClearance",
-          "workingWidth",
-          "capacity",
-          "liftCapacity",
-          "ptoSpeed",
-          "hydraulicFlow",
-          "hydraulicPressure",
-          "grainTankCapacity",
-          "headerWidth",
-          "threshingWidth",
-          "cleaningArea",
-          "engineHours",
-          "mileage",
-          "year",
-        ];
-        const motorizedSpecToSend: any = { ...motorizedSpec };
-        numericFields.forEach((key) => {
-          if (
-            motorizedSpecToSend[key] !== undefined &&
-            motorizedSpecToSend[key] !== ""
-          ) {
-            motorizedSpecToSend[key] = Number(motorizedSpecToSend[key]);
-          }
+        // Перевіряємо, чи є заповнені поля
+        const hasFilledValues = Object.values(motorizedSpec).some((value) => {
+          if (value === null || value === undefined) return false;
+          if (typeof value === "string" && value.trim() === "") return false;
+          if (typeof value === "boolean" && value === false) return false;
+          return true;
         });
-        formDataToSubmit.append(
-          "motorizedSpec",
-          JSON.stringify(motorizedSpecToSend)
-        );
+
+        if (hasFilledValues) {
+          // Конвертуємо числові поля безпечно
+          const numericFields = [
+            "enginePower",
+            "enginePowerKw",
+            "fuelCapacity",
+            "numberOfGears",
+            "length",
+            "width",
+            "height",
+            "weight",
+            "wheelbase",
+            "groundClearance",
+            "workingWidth",
+            "capacity",
+            "liftCapacity",
+            "ptoSpeed",
+            "hydraulicFlow",
+            "hydraulicPressure",
+            "grainTankCapacity",
+            "headerWidth",
+            "threshingWidth",
+            "cleaningArea",
+            "engineHours",
+            "mileage",
+            "year",
+          ];
+
+          const cleanMotorizedSpec = { ...motorizedSpec };
+
+          // Конвертуємо порожні рядки в null і числові поля в числа
+          Object.keys(cleanMotorizedSpec).forEach((key) => {
+            const typedKey = key as keyof typeof cleanMotorizedSpec;
+            const value = cleanMotorizedSpec[typedKey];
+
+            if (value === "") {
+              cleanMotorizedSpec[typedKey] = null;
+            } else if (
+            numericFields.includes(key) &&
+                typeof value === "string" &&
+                value.trim() !== ""
+              ) {
+                cleanMotorizedSpec[typedKey] = Number(value) as any;
+              }
+          });
+
+          formDataToSubmit.append(
+            "motorizedSpec",
+            JSON.stringify(cleanMotorizedSpec)
+          );
+        }
       }
 
-      formData.images.forEach((image) => {
-        formDataToSubmit.append("images", image);
+      // Додаємо зображення
+      for (let i = 0; i < formData.images.length; i++) {
+        const file = formData.images[i];
+        if (file) {
+          formDataToSubmit.append("images", file);
+        }
+      }
+
+      // Логуємо дані для налагодження
+      console.log("Submitting form data:", {
+        title: formData.title,
+        description: formData.description.substring(0, 30) + "...",
+        price: formData.price,
+        currency: formData.currency,
+        category: formData.categoryName,
+        categoryId: formData.categoryId,
+        location: locationData,
+        imagesCount: formData.images.length,
+        condition: formData.condition,
       });
 
       const resultAction = await dispatch(createListing(formDataToSubmit));
@@ -615,58 +438,16 @@ const CreateListingPage = () => {
       if (createListing.fulfilled.match(resultAction)) {
         navigate(`/listings/${resultAction.payload.id}`);
       } else {
-        alert("Не вдалося створити оголошення, спробуйте ще раз.");
+        console.error("Create listing failed:", resultAction.error);
+        alert(
+          `Не вдалося створити оголошення: ${resultAction.error?.message || "Перевірте правильність заповнення форми"}`
+        );
       }
-    } catch (_) {
+    } catch (error) {
+      console.error("Error creating listing:", error);
       alert("Виникла помилка під час створення оголошення, спробуйте пізніше.");
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  const handleFiles = (files: File[]) => {
-    const validImageTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
-    const imageFiles = files.filter((file) =>
-      validImageTypes.includes(file.type)
-    );
-
-    if (imageFiles.length === 0) {
-      setErrors({ ...errors, images: "Завантажте тільки зображення" });
-      return;
-    }
-
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const oversizedFiles = imageFiles.filter(
-      (file) => file.size > MAX_FILE_SIZE
-    );
-    if (oversizedFiles.length > 0) {
-      setErrors({
-        ...errors,
-        images: "Розмір зображення не може перевищувати 5MB",
-      });
-      return;
-    }
-
-    const totalImages = formData.images.length + imageFiles.length;
-    if (totalImages > 10) {
-      setErrors({ ...errors, images: "Максимум 10 фото" });
-      return;
-    }
-
-    const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file));
-    setFormData({
-      ...formData,
-      images: [...formData.images, ...imageFiles],
-    });
-    setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
-
-    if (errors.images) {
-      setErrors({ ...errors, images: undefined });
     }
   };
 
@@ -675,6 +456,7 @@ const CreateListingPage = () => {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         Створення нового оголошення
       </h1>
+
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Ліва колонка */}
@@ -702,111 +484,14 @@ const CreateListingPage = () => {
                 <p className="mt-1 text-sm text-red-500">{errors.title}</p>
               )}
             </div>
-            {/* Марка техніки */}
-            <div>
-              <label
-                htmlFor="brandId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Марка техніки *
-              </label>
-              <div className="relative" id="brands-dropdown-container">
-                <div
-                  className={`relative w-full border ${
-                    errors.brandId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500`}
-                >
-                  <input
-                    type="text"
-                    placeholder="Почніть вводити назву марки..."
-                    value={brandSearchQuery}
-                    onChange={handleBrandSearchChange}
-                    onFocus={() => setBrandsDropdownOpen(true)}
-                    className="w-full px-4 py-2 rounded-md focus:outline-none"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <button
-                      type="button"
-                      onClick={() => setBrandsDropdownOpen(!brandsDropdownOpen)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <ChevronDown size={18} className="text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-                {brandsDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {brandsStatus === "loading" ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">
-                        Завантаження марок...
-                      </div>
-                    ) : Array.isArray(brands) && brands.length > 0 ? (
-                      <ul className="py-1">
-                        <li className="px-4 py-1 text-xs text-gray-500 border-b">
-                          Знайдено брендів: {brands.length}
-                        </li>
-                        {brands
-                          .filter((brand) =>
-                            brandSearchQuery
-                              ? brand.name
-                                  .toLowerCase()
-                                  .includes(brandSearchQuery.toLowerCase())
-                              : true
-                          )
-                          .map((brand) => (
-                            <li key={brand.id}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFormData({
-                                    ...formData,
-                                    brandId: brand.id.toString(),
-                                    brandName: brand.name,
-                                  });
-                                  setBrandSearchQuery(brand.name);
-                                  setBrandsDropdownOpen(false);
-                                  if (errors.brandId) {
-                                    setErrors((prev) => {
-                                      const { brandId: _brandId, ...rest } =
-                                        prev;
-                                      return rest;
-                                    });
-                                  }
-                                }}
-                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                  formData.brandId === brand.id.toString()
-                                    ? "bg-green-50 text-green-700"
-                                    : "text-gray-700"
-                                }`}
-                              >
-                                {brand.name}
-                              </button>
-                            </li>
-                          ))}
-                        {brands.filter((brand) =>
-                          brandSearchQuery
-                            ? brand.name
-                                .toLowerCase()
-                                .includes(brandSearchQuery.toLowerCase())
-                            : true
-                        ).length === 0 && (
-                          <li className="px-4 py-2 text-sm text-gray-500">
-                            За вашим запитом нічого не знайдено
-                          </li>
-                        )}
-                      </ul>
-                    ) : (
-                      <div className="px-4 py-2 text-sm text-gray-500">
-                        Немає доступних марок
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              {errors.brandId && (
-                <p className="mt-1 text-sm text-red-500">{errors.brandId}</p>
-              )}
-            </div>
+
+            {/* Марка техніки - використовуємо компонент BrandSelector */}
+            <BrandSelector
+              value={formData.brandId}
+              onChange={handleBrandSelect}
+              error={errors.brandId || ""}
+            />
+
             {/* Опис */}
             <div>
               <label
@@ -832,127 +517,27 @@ const CreateListingPage = () => {
                 </p>
               )}
             </div>
-            {/* Ціна з вибором валюти */}
-            <div>
-              <label
-                htmlFor="price"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Ціна *
-              </label>
-              <div className="flex">
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  placeholder={`Наприклад: 1000000 ${getCurrencySymbol(formData.currency)}`}
-                  min="0"
-                  step="1"
-                  className={`w-2/4 px-4 py-2 border ${
-                    errors.price ? "border-red-500" : "border-gray-300"
-                  } rounded-l-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                />
-                <div className="relative w-1/4">
-                  <select
-                    id="currency"
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleInputChange}
-                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                  >
-                    <option value="UAH">{getCurrencySymbol("UAH")} UAH</option>
-                    <option value="USD">{getCurrencySymbol("USD")} USD</option>
-                    <option value="EUR">{getCurrencySymbol("EUR")} EUR</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <ChevronDown size={18} className="text-gray-400" />
-                  </div>
-                </div>
-                <div className="relative w-1/4">
-                  <select
-                    id="priceType"
-                    name="priceType"
-                    value={formData.priceType}
-                    onChange={handleInputChange}
-                    className="appearance-none w-full h-full px-3 py-2 border-l-0 border border-gray-300 bg-gray-50 rounded-none focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                  >
-                    <option value="NETTO">Нетто (без ПДВ)</option>
-                    <option value="BRUTTO">Брутто (з ПДВ)</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <ChevronDown size={18} className="text-gray-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center mt-2">
-                <input
-                  type="checkbox"
-                  id="vatIncluded"
-                  name="vatIncluded"
-                  checked={formData.vatIncluded}
-                  onChange={handleInputChange}
-                  className="mr-2"
-                />
-                <label htmlFor="vatIncluded" className="text-sm text-gray-700">
-                  Включено ПДВ
-                </label>
-              </div>
-              {errors.price && (
-                <p className="mt-1 text-sm text-red-500">{errors.price}</p>
-              )}
-              {formData.price && !errors.price && (
-                <div className="text-sm text-gray-500 mt-1">
-                  Буде відображатися як:{" "}
-                  {formatPriceWithSymbol(formData.price, formData.currency)}{" "}
-                  {formData.priceType === "BRUTTO"
-                    ? "(Брутто, з ПДВ)"
-                    : "(Нетто, без ПДВ)"}
-                  {formData.vatIncluded ? " (ПДВ включено)" : ""}
-                </div>
-              )}
-            </div>
+
+            {/* Ціна з вибором валюти - використовуємо компонент PriceInput */}
+            <PriceInput
+              price={formData.price}
+              currency={formData.currency}
+              priceType={formData.priceType}
+              vatIncluded={formData.vatIncluded}
+              onChange={handleInputChange}
+              error={errors.price || ""}
+            />
           </div>
+
           {/* Права колонка */}
           <div className="space-y-6">
-            {/* Категорія */}
-            <div>
-              <label
-                htmlFor="categoryId"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Категорія *
-              </label>
-              <div className="relative">
-                <select
-                  id="categoryId"
-                  name="categoryId"
-                  value={formData.categoryId}
-                  onChange={handleInputChange}
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.categoryId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Виберіть категорію</option>
-                  {categoriesStatus === "loading" ? (
-                    <option disabled>Завантаження категорій...</option>
-                  ) : (
-                    categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
-                </div>
-              </div>
-              {errors.categoryId && (
-                <p className="mt-1 text-sm text-red-500">{errors.categoryId}</p>
-              )}
-            </div>
+            {/* Категорія - використовуємо компонент CategorySelector */}
+            <CategorySelector
+              value={formData.categoryId}
+              onChange={handleInputChange}
+              error={errors.categoryId || ""}
+            />
+
             {/* Стан техніки */}
             <div>
               <label
@@ -972,706 +557,48 @@ const CreateListingPage = () => {
                   <option value="NEW">Нова</option>
                   <option value="USED">Вживана</option>
                 </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
-                </div>
               </div>
             </div>
-            {/* Місцезнаходження */}
-            {/* Країна */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Країна *
-              </label>
-              <div className="relative">
-                <select
-                  id="countryId"
-                  name="countryId"
-                  value={formData.countryId}
-                  onChange={handleInputChange}
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.countryId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Виберіть країну</option>
-                  {countries.map((country) => (
-                    <option key={country.id} value={country.id}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
-                </div>
-              </div>
-              {errors.countryId && (
-                <p className="mt-1 text-sm text-red-500">{errors.countryId}</p>
-              )}
-            </div>
-            {/* Область */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Область *
-              </label>
-              <div className="relative">
-                <select
-                  id="regionId"
-                  name="regionId"
-                  value={formData.regionId}
-                  onChange={handleInputChange}
-                  disabled={!formData.countryId}
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.regionId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Виберіть область</option>
-                  {locationStatus === "loading" ? (
-                    <option disabled>Завантаження областей...</option>
-                  ) : (
-                    Array.isArray(regions) &&
-                    regions.map((region: { id: number; name: string }) => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown size={18} className="text-gray-400" />
-                </div>
-              </div>
-              {errors.regionId && (
-                <p className="mt-1 text-sm text-red-500">{errors.regionId}</p>
-              )}
-            </div>
-            {/* Громада (тільки для України) */}
-            {isUkraine && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Громада {isUkraine ? "" : "(не обов'язково)"}
-                </label>
-                <div className="relative">
-                  <select
-                    id="communityId"
-                    name="communityId"
-                    value={formData.communityId}
-                    onChange={handleInputChange}
-                    disabled={!formData.regionId}
-                    className={`appearance-none w-full px-4 py-2 border ${
-                      errors.communityId ? "border-red-500" : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                  >
-                    <option value="">Виберіть громаду</option>
-                    {locationStatus === "loading" ? (
-                      <option disabled>Завантаження громад...</option>
-                    ) : (
-                      communities?.map((community: any) => (
-                        <option key={community.id} value={community.id}>
-                          {community.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <ChevronDown size={18} className="text-gray-400" />
-                  </div>
-                </div>
-                {errors.communityId && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.communityId}
-                  </p>
-                )}
-              </div>
-            )}
-            {/* Населений пункт */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Населений пункт *
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="locationName"
-                  name="locationName"
-                  value={formData.locationName}
-                  onChange={handleInputChange}
-                  placeholder="Введіть назву населеного пункту"
-                  className={`appearance-none w-full px-4 py-2 border ${
-                    errors.locationName ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                />
-              </div>
-              {errors.locationName && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.locationName}
-                </p>
-              )}
-            </div>
-            {/* Карта для вибору координат */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Вкажіть місцезнаходження на карті *
-              </label>
-              <div className="w-full h-64 rounded-md border border-gray-300 overflow-hidden">
-                <div
-                  id="listing-map"
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
-              {errors.latitude && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.latitude || errors.longitude}
-                </p>
-              )}
-              {formData.latitude && formData.longitude && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Координати: {formData.latitude.toFixed(6)},{" "}
-                  {formData.longitude.toFixed(6)}
-                </div>
-              )}
-            </div>
-            {/* Завантаження зображень */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Фотографії *
-              </label>
-              <div
-                className={`border-2 border-dashed ${
-                  isDragging
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-300"
-                } rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => document.getElementById("image-upload")?.click()}
-              >
-                <input
-                  type="file"
-                  id="image-upload"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Upload size={36} className="mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-700 mb-1">
-                  Перетягніть зображення сюди або натисніть, щоб вибрати
-                </p>
-                <p className="text-xs text-gray-500">
-                  Підтримувані формати: JPEG, PNG, GIF, WEBP. Максимум 10 фото,
-                  до 5MB кожне.
-                </p>
-              </div>
-              {errors.images && (
-                <p className="mt-2 text-sm text-red-500">{errors.images}</p>
-              )}
-              {imagePreviewUrls.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Завантажені зображення ({imagePreviewUrls.length}/10)
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {imagePreviewUrls.map((url, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-w-1 aspect-h-1 rounded-md overflow-hidden group"
-                      >
-                        <img
-                          src={url}
-                          alt={`Зображення ${index + 1}`}
-                          className="object-cover w-full h-full"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveImage(index);
-                          }}
-                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition-opacity"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ))}
-                    {imagePreviewUrls.length < 10 && (
-                      <div
-                        className="border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() =>
-                          document.getElementById("image-upload")?.click()
-                        }
-                      >
-                        <Plus size={24} className="text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+
+            {/* Локація - використовуємо компонент LocationSelector */}
+            <LocationSelector
+              countries={countries}
+              data={{
+                countryId: formData.countryId,
+                regionId: formData.regionId,
+                communityId: formData.communityId,
+                locationName: formData.locationName,
+                latitude: formData.latitude || 0,
+                longitude: formData.longitude || 0,
+              }}
+              errors={{
+                countryId: errors.countryId || "",
+                regionId: errors.regionId || "",
+                communityId: errors.communityId || "",
+                locationName: errors.locationName || "",
+                latitude: errors.latitude || "",
+              }}
+              onChange={handleLocationChange}
+              mapLoaded={mapLoaded}
+            />
+
+            {/* Завантаження зображень - використовуємо компонент ImageUploader */}
+            <ImageUploader
+              images={formData.images}
+              onChange={handleImagesChange}
+              onRemove={handleRemoveImage}
+              error={errors.images || ""}
+            />
           </div>
         </div>
-        {/* --- MOTORIZE FIELDS --- */}
-        {isMotorized && (
-          <div className="mt-8 border-t pt-6">
-            <h2 className="text-lg font-semibold mb-4 text-gray-900">
-              Технічні характеристики (моторизована техніка)
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Модель
-                </label>
-                <input
-                  type="text"
-                  name="model"
-                  value={motorizedSpec.model}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Рік випуску
-                </label>
-                <input
-                  type="number"
-                  name="year"
-                  value={motorizedSpec.year}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Серійний номер
-                </label>
-                <input
-                  type="text"
-                  name="serialNumber"
-                  value={motorizedSpec.serialNumber}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Потужність двигуна (к.с.)
-                </label>
-                <input
-                  type="number"
-                  name="enginePower"
-                  value={motorizedSpec.enginePower}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Потужність двигуна (кВт)
-                </label>
-                <input
-                  type="number"
-                  name="enginePowerKw"
-                  value={motorizedSpec.enginePowerKw}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Модель двигуна
-                </label>
-                <input
-                  type="text"
-                  name="engineModel"
-                  value={motorizedSpec.engineModel}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Тип пального
-                </label>
-                <select
-                  name="fuelType"
-                  value={motorizedSpec.fuelType}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="DIESEL">Дизель</option>
-                  <option value="GASOLINE">Бензин</option>
-                  <option value="ELECTRIC">Електро</option>
-                  <option value="HYBRID">Гібрид</option>
-                  <option value="GAS">Газ</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Обʼєм паливного баку (л)
-                </label>
-                <input
-                  type="number"
-                  name="fuelCapacity"
-                  value={motorizedSpec.fuelCapacity}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Трансмісія
-                </label>
-                <input
-                  type="text"
-                  name="transmission"
-                  value={motorizedSpec.transmission}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Кількість передач
-                </label>
-                <input
-                  type="number"
-                  name="numberOfGears"
-                  value={motorizedSpec.numberOfGears}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Довжина (мм)
-                </label>
-                <input
-                  type="number"
-                  name="length"
-                  value={motorizedSpec.length}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ширина (мм)
-                </label>
-                <input
-                  type="number"
-                  name="width"
-                  value={motorizedSpec.width}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Висота (мм)
-                </label>
-                <input
-                  type="number"
-                  name="height"
-                  value={motorizedSpec.height}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Вага (кг)
-                </label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={motorizedSpec.weight}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Колісна база (мм)
-                </label>
-                <input
-                  type="number"
-                  name="wheelbase"
-                  value={motorizedSpec.wheelbase}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Дорожній просвіт (мм)
-                </label>
-                <input
-                  type="number"
-                  name="groundClearance"
-                  value={motorizedSpec.groundClearance}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Робоча ширина (мм)
-                </label>
-                <input
-                  type="number"
-                  name="workingWidth"
-                  value={motorizedSpec.workingWidth}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ємність (л)
-                </label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={motorizedSpec.capacity}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Підйомна сила (кг)
-                </label>
-                <input
-                  type="number"
-                  name="liftCapacity"
-                  value={motorizedSpec.liftCapacity}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Трьохточкове навішування
-                </label>
-                <input
-                  type="checkbox"
-                  name="threePtHitch"
-                  checked={motorizedSpec.threePtHitch}
-                  onChange={handleMotorizedSpecChange}
-                  className="mr-2"
-                />
-                <span>Так</span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ВВП (вал відбору потужності)
-                </label>
-                <input
-                  type="checkbox"
-                  name="pto"
-                  checked={motorizedSpec.pto}
-                  onChange={handleMotorizedSpecChange}
-                  className="mr-2"
-                />
-                <span>Так</span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Швидкість ВВП (об/хв)
-                </label>
-                <input
-                  type="number"
-                  name="ptoSpeed"
-                  value={motorizedSpec.ptoSpeed}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Передній міст
-                </label>
-                <input
-                  type="text"
-                  name="frontAxle"
-                  value={motorizedSpec.frontAxle}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Задній міст
-                </label>
-                <input
-                  type="text"
-                  name="rearAxle"
-                  value={motorizedSpec.rearAxle}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Розмір передніх шин
-                </label>
-                <input
-                  type="text"
-                  name="frontTireSize"
-                  value={motorizedSpec.frontTireSize}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Розмір задніх шин
-                </label>
-                <input
-                  type="text"
-                  name="rearTireSize"
-                  value={motorizedSpec.rearTireSize}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Продуктивність гідравліки (л/хв)
-                </label>
-                <input
-                  type="number"
-                  name="hydraulicFlow"
-                  value={motorizedSpec.hydraulicFlow}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Тиск гідравліки (бар)
-                </label>
-                <input
-                  type="number"
-                  name="hydraulicPressure"
-                  value={motorizedSpec.hydraulicPressure}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ємність зернового бункера (л)
-                </label>
-                <input
-                  type="number"
-                  name="grainTankCapacity"
-                  value={motorizedSpec.grainTankCapacity}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ширина жатки (мм)
-                </label>
-                <input
-                  type="number"
-                  name="headerWidth"
-                  value={motorizedSpec.headerWidth}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ширина молотильного барабана (мм)
-                </label>
-                <input
-                  type="number"
-                  name="threshingWidth"
-                  value={motorizedSpec.threshingWidth}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Площа очищення (м²)
-                </label>
-                <input
-                  type="number"
-                  name="cleaningArea"
-                  value={motorizedSpec.cleaningArea}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Напрацювання двигуна (м/г)
-                </label>
-                <input
-                  type="number"
-                  name="engineHours"
-                  value={motorizedSpec.engineHours}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Пробіг (км)
-                </label>
-                <input
-                  type="number"
-                  name="mileage"
-                  value={motorizedSpec.mileage}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Дата останнього ТО
-                </label>
-                <input
-                  type="date"
-                  name="lastServiceDate"
-                  value={motorizedSpec.lastServiceDate}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Дата наступного ТО
-                </label>
-                <input
-                  type="date"
-                  name="nextServiceDate"
-                  value={motorizedSpec.nextServiceDate}
-                  onChange={handleMotorizedSpecChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  В робочому стані
-                </label>
-                <input
-                  type="checkbox"
-                  name="isOperational"
-                  checked={motorizedSpec.isOperational}
-                  onChange={handleMotorizedSpecChange}
-                  className="mr-2"
-                />
-                <span>Так</span>
-              </div>
-            </div>
-          </div>
-        )}
+
+        {/* Технічні характеристики - використовуємо компонент MotorizedSpecForm */}
+        <MotorizedSpecFormComponent
+          isMotorized={isMotorized}
+          motorizedSpec={motorizedSpec}
+          onChange={handleMotorizedSpecChange}
+        />
+
         <div className="mt-8 flex items-center justify-end space-x-4">
           <button
             type="button"

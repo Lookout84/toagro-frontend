@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
 import { User as UserType } from "../../types/api";
 import { User, Edit2, Mail, Phone, Calendar, CheckCircle, XCircle } from "lucide-react";
 

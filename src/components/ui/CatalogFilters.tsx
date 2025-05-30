@@ -37,7 +37,15 @@ interface CatalogFiltersProps {
     sortBy: string;
     sortOrder: string;
   };
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: {
+    condition?: string;
+    categoryId?: number | string;
+    minPrice?: string;
+    maxPrice?: string;
+    location?: string;
+    sortBy: string;
+    sortOrder: string;
+  }) => void;
   categories: Category[];
   showCondition?: boolean;
 }
@@ -66,7 +74,10 @@ const CatalogFilters: React.FC<CatalogFiltersProps> = ({
   }, [filters]);
 
   // Обробка зміни фільтрів
-  const handleFilterChange = (field: string, value: any) => {
+  const handleFilterChange = (
+    field: string,
+    value: string | number | undefined
+  ) => {
     const newFilters = { ...localFilters, [field]: value };
     setLocalFilters(newFilters);
     onFilterChange(newFilters);
@@ -100,15 +111,6 @@ const CatalogFilters: React.FC<CatalogFiltersProps> = ({
   };
 
   // Функція для отримання поточної опції сортування
-  const getCurrentSortOption = () => {
-    const { sortBy, sortOrder } = localFilters;
-    return (
-      sortOptions.find(
-        (option) =>
-          option.value.sortBy === sortBy && option.value.sortOrder === sortOrder
-      ) || sortOptions[0]
-    );
-  };
 
   // Очищення всіх фільтрів
   const handleResetFilters = () => {

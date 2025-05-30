@@ -23,28 +23,50 @@ const initialState: ListingState = {
 // Асинхронні thunks для запитів до API
 export const fetchListingById = createAsyncThunk(
   "listing/fetchListingById",
-  async (id: number, { rejectWithValue }) => {
+  async (id: number, { rejectWithValue, dispatch }) => {
     try {
       const response = await listingsAPI.getById(id);
 
       // Додаємо логування для перевірки структури відповіді
       console.log("API response for listing:", response);
 
+      let listing;
       // Перевіряємо структуру і використовуємо правильний шлях
       if (response.data && response.data.data) {
         // Якщо дані приходять у вигляді { status, data: LISTING }
-        return response.data.data;
+        listing = response.data.data;
       } else if (response.data && response.data.listing) {
         // Альтернативний шлях: { status, listing: LISTING }
-        return response.data.listing;
+        listing = response.data.listing;
       } else if (response.data) {
         // Дані приходять прямо в полі data
-        return response.data;
+        listing = response.data;
       } else {
         // Якщо структура зовсім інша
         console.error("Unexpected API response structure:", response);
         return rejectWithValue("Неочікувана структура відповіді API");
       }
+
+      // Якщо отримали оголошення і в ньому є userId, завантажуємо також інші оголошення цього користувача
+      if (listing && listing.user && listing.user.id) {
+        try {
+          dispatch(
+            fetchUserListings({
+              userId: listing.user.id,
+              limit: 4,
+              exclude: listing.id,
+            })
+          );
+        } catch (userListingsError) {
+          console.error(
+            "Не вдалося завантажити інші оголошення користувача:",
+            userListingsError
+          );
+          // Продовжуємо виконання, навіть якщо не вдалося завантажити оголошення користувача
+        }
+      }
+
+      return listing;
     } catch (error: unknown) {
       if (
         error &&
@@ -54,28 +76,52 @@ export const fetchListingById = createAsyncThunk(
         typeof error.response === "object" &&
         "data" in error.response
       ) {
-        // @ts-expect-error: dynamic access
-        return rejectWithValue(error.response.data?.message || "Помилка завантаження оголошення");
+        const data = error.response.data;
+        const message =
+          data && typeof data === "object" && "message" in data
+            ? (data as { message?: string }).message
+            : undefined;
+        return rejectWithValue(
+          message || "Помилка завантаження оголошення"
+        );
       }
       return rejectWithValue("Помилка завантаження оголошення");
     }
   }
 );
 
+// Оновлюємо fetchUserListings, щоб він міг приймати параметри
 export const fetchUserListings = createAsyncThunk(
   "listing/fetchUserListings",
-  async (_, { rejectWithValue }) => {
+  async (
+    params: { userId: number; limit?: number; exclude?: number } | undefined,
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await listingsAPI.getUserListings();
-      // Якщо API повертає { status, data: { listings: [...] } }
-      if (response.data && response.data.data && Array.isArray(response.data.data.listings)) {
+      let response;
+      if (params && params.userId) {
+        // Якщо передано userId, завантажуємо оголошення цього користувача
+        response = await listingsAPI.getAll({
+          userId: params.userId,
+          limit: params.limit || 10,
+          ...(params.exclude ? { exclude: params.exclude } : {}),
+        });
+      } else {
+        // Інакше завантажуємо оголошення поточного користувача
+        response = await listingsAPI.getUserListings();
+      }
+
+      // Обробляємо різні формати відповіді
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data.listings)
+      ) {
         return response.data.data.listings;
       }
-      // Якщо API повертає { status, listings: [...] }
       if (response.data && Array.isArray(response.data.listings)) {
         return response.data.listings;
       }
-      // Якщо API повертає просто масив
       if (Array.isArray(response.data)) {
         return response.data;
       }
@@ -94,38 +140,63 @@ export const fetchUserListings = createAsyncThunk(
           data && typeof data === "object" && "message" in data
             ? (data as { message?: string }).message
             : undefined;
-        return rejectWithValue(
-          message || "Помилка завантаження ваших оголошень"
-        );
+        return rejectWithValue(message || "Помилка завантаження оголошень");
       }
-      return rejectWithValue("Помилка завантаження ваших оголошень");
+      return rejectWithValue("Помилка завантаження оголошень");
     }
   }
 );
 
 // Створення оголошення
 export const createListing = createAsyncThunk(
-  "listings/create",
-  async (listingData: any, { rejectWithValue }) => {
+  "listing/createListing",
+  async (formData: FormData, { rejectWithValue }) => {
     try {
-      const response = await listingsAPI.create(listingData);
-      // Якщо API повертає { status, data: { listing: ... } }
-      if (response.data && response.data.data && response.data.data.listing) {
-        return response.data.data.listing;
+      const response = await listingsAPI.create(formData);
+      
+      // Логуємо успішну відповідь
+      console.log("Listing created successfully:", response.data);
+      
+      return response.data.data || response.data;
+    } catch (error: any) {
+      // Детальніше логуємо помилки
+      console.error("Create listing API error:", error);
+      
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        return rejectWithValue({
+          status: error.response.status,
+          data: error.response.data,
+          message: error.response.data?.message || "Помилка створення оголошення"
+        });
       }
-      // Якщо API повертає { status, listing: ... }
-      if (response.data && response.data.listing) {
-        return response.data.listing;
-      }
-      // Якщо API повертає просто об'єкт
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        (error as any).response?.data?.error || "Не вдалося створити оголошення"
-      );
+      
+      return rejectWithValue("Помилка створення оголошення");
     }
   }
 );
+// export const createListing = createAsyncThunk(
+//   "listings/create",
+//   async (listingData: any, { rejectWithValue }) => {
+//     try {
+//       const response = await listingsAPI.create(listingData);
+//       // Якщо API повертає { status, data: { listing: ... } }
+//       if (response.data && response.data.data && response.data.data.listing) {
+//         return response.data.data.listing;
+//       }
+//       // Якщо API повертає { status, listing: ... }
+//       if (response.data && response.data.listing) {
+//         return response.data.listing;
+//       }
+//       // Якщо API повертає просто об'єкт
+//       return response.data;
+//     } catch (error) {
+//       return rejectWithValue(
+//         (error as any).response?.data?.error || "Не вдалося створити оголошення"
+//       );
+//     }
+//   }
+// );
 
 export const updateListing = createAsyncThunk(
   "listing/updateListing",
@@ -134,9 +205,11 @@ export const updateListing = createAsyncThunk(
     { rejectWithValue, dispatch }
   ) => {
     try {
-      console.log(`Оновлення оголошення #${id} із ${formData.getAll('images').length} зображеннями`);
+      console.log(
+        `Оновлення оголошення #${id} із ${formData.getAll("images").length} зображеннями`
+      );
 
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         console.log("FormData contents:");
         for (const pair of formData.entries()) {
           console.log(pair[0], pair[1]);
@@ -170,20 +243,25 @@ export const updateListing = createAsyncThunk(
         typeof error.response === "object" &&
         "data" in error.response
       ) {
-        const responseData = error.response.data as { message?: string; error?: string };
+        const responseData = error.response.data as {
+          message?: string;
+          error?: string;
+        };
         if (responseData?.message) {
           errorMessage = responseData.message;
         } else if (responseData?.error) {
           errorMessage = responseData.error;
         }
 
-        const statusCode = 'status' in error.response ? error.response.status : 'unknown';
+        const statusCode =
+          "status" in error.response ? error.response.status : "unknown";
         console.error(`Статус відповіді: ${statusCode}`, responseData);
 
-        if ('status' in error.response && error.response.status === 401) {
+        if ("status" in error.response && error.response.status === 401) {
           return rejectWithValue({
-            message: "Авторизація закінчилась. Будь ласка, увійдіть знову, але НЕ втратьте дані.",
-            authError: true
+            message:
+              "Авторизація закінчилась. Будь ласка, увійдіть знову, але НЕ втратьте дані.",
+            authError: true,
           });
         }
       }
@@ -287,9 +365,11 @@ const listingSlice = createSlice({
       })
       .addCase(updateListing.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = typeof action.payload === "string"
-          ? action.payload
-          : (action.payload as any)?.message || "Помилка оновлення оголошення";
+        state.error =
+          typeof action.payload === "string"
+            ? action.payload
+            : (action.payload as any)?.message ||
+              "Помилка оновлення оголошення";
       })
 
       // Обробка результатів deleteListing
@@ -317,8 +397,9 @@ const listingSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       });
-  }
+  },
 });
 
-export const { clearCurrentListing, setCurrentListing, setSimilarListings } = listingSlice.actions;
+export const { clearCurrentListing, setCurrentListing, setSimilarListings } =
+  listingSlice.actions;
 export default listingSlice.reducer;

@@ -80,6 +80,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  priceType?: "BRUTTO" | "NETTO" | string;
   location: string;
   category: string;
   categoryId: number;
@@ -94,6 +95,8 @@ export interface Listing {
     id: number;
     name: string;
     avatar?: string;
+    phoneNumber?: string;
+    email?: string;
   };
 }
 
