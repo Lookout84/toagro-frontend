@@ -1,6 +1,6 @@
 import React from "react";
 
-interface LoaderProps {
+export interface LoaderProps {
   fullScreen?: boolean;
   size?: "small" | "medium" | "large";
   text?: string;

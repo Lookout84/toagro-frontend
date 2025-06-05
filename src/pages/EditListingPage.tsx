@@ -228,11 +228,13 @@ const EditListingPage = () => {
 
           // In data
           if (
+            typeof currentListing === "object" &&
+            currentListing !== null &&
             "data" in currentListing &&
-            currentListing.data &&
-            typeof currentListing.data === "object"
+            (currentListing as any).data &&
+            typeof (currentListing as any).data === "object"
           ) {
-            const data = currentListing.data as any;
+            const data = (currentListing as any).data;
 
             // Check data.location
             if ("location" in data) {

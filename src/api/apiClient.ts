@@ -121,6 +121,99 @@ export const authAPI = {
   },
 };
 
+// Розширення ApiClient для кампаній
+export const campaignsAPI = {
+  getAll: (params?: Record<string, unknown>) => {
+    return api.get("/campaigns", { params });
+  },
+
+  create: (campaign: {
+    name: string;
+    description?: string;
+    type: string; // CampaignType 
+    status?: string; // CampaignStatus
+    startDate?: string | Date;
+    endDate?: string | Date;
+    targetAudience?: Record<string, unknown>;
+    goal?: string;
+    budget?: number;
+    performance?: Record<string, unknown>;
+  }) => {
+    return api.post("/campaigns", campaign);
+  },
+
+  getTypes: () => {
+    return api.get("/campaigns/types");
+  },
+
+  getStatuses: () => {
+    return api.get("/campaigns/statuses");
+  },
+
+  getById: (id: number) => {
+    return api.get(`/campaigns/${id}`);
+  },
+
+  update: (
+    id: number,
+    campaign: {
+      name?: string;
+      description?: string;
+      type?: string;
+      status?: string;
+      startDate?: string | Date;
+      endDate?: string | Date;
+      targetAudience?: Record<string, unknown>;
+      goal?: string;
+      budget?: number;
+      performance?: Record<string, unknown>;
+    }
+  ) => {
+    return api.put(`/campaigns/${id}`, campaign);
+  },
+
+  delete: (id: number) => {
+    return api.delete(`/campaigns/${id}`);
+  },
+
+  getAnalytics: (id: number) => {
+    return api.get(`/campaigns/${id}/analytics`);
+  },
+
+  createTest: (data: { 
+    name: string;
+    type: string;
+    targetAudience?: Record<string, unknown>;
+  }) => {
+    return api.post("/campaigns/test", data);
+  },
+
+  duplicate: (id: number) => {
+    return api.post(`/campaigns/${id}/duplicate`);
+  },
+
+  activate: (id: number) => {
+    return api.post(`/campaigns/${id}/activate`);
+  },
+
+  pause: (id: number) => {
+    return api.post(`/campaigns/${id}/pause`);
+  },
+
+  cancel: (id: number) => {
+    return api.post(`/campaigns/${id}/cancel`);
+  },
+
+  startMessages: (id: number, data: {
+    messageType: string;
+    content: string;
+    subject?: string;
+    recipientFilter?: Record<string, unknown>;
+  }) => {
+    return api.post(`/campaigns/${id}/messages`, data);
+  },
+};
+
 // API для оголошень
 export const listingsAPI = {
   getAll: (params?: Record<string, unknown>) => {
@@ -498,78 +591,78 @@ export const adminAPI = {
 };
 
 // API для кампаній
-export const campaignsAPI = {
-  getAll: (params?: Record<string, unknown>) => {
-    return api.get("/campaigns", { params });
-  },
+// export const campaignsAPI = {
+//   getAll: (params?: Record<string, unknown>) => {
+//     return api.get("/campaigns", { params });
+//   },
 
-  create: (campaign: {
-    name: string;
-    description: string;
-    startDate: string;
-    endDate: string;
-    [key: string]: unknown;
-  }) => {
-    return api.post("/campaigns", campaign);
-  },
+//   create: (campaign: {
+//     name: string;
+//     description: string;
+//     startDate: string;
+//     endDate: string;
+//     [key: string]: unknown;
+//   }) => {
+//     return api.post("/campaigns", campaign);
+//   },
 
-  getTypes: () => {
-    return api.get("/campaigns/types");
-  },
+//   getTypes: () => {
+//     return api.get("/campaigns/types");
+//   },
 
-  getStatuses: () => {
-    return api.get("/campaigns/statuses");
-  },
+//   getStatuses: () => {
+//     return api.get("/campaigns/statuses");
+//   },
 
-  getById: (id: number) => {
-    return api.get(`/campaigns/${id}`);
-  },
+//   getById: (id: number) => {
+//     return api.get(`/campaigns/${id}`);
+//   },
 
-  update: (
-    id: number,
-    campaign: {
-      name?: string;
-      description?: string;
-      startDate?: string;
-      endDate?: string;
-      [key: string]: unknown;
-    }
-  ) => {
-    return api.put(`/campaigns/${id}`, campaign);
-  },
+//   update: (
+//     id: number,
+//     campaign: {
+//       name?: string;
+//       description?: string;
+//       startDate?: string;
+//       endDate?: string;
+//       [key: string]: unknown;
+//     }
+//   ) => {
+//     return api.put(`/campaigns/${id}`, campaign);
+//   },
 
-  delete: (id: number) => {
-    return api.delete(`/campaigns/${id}`);
-  },
+//   delete: (id: number) => {
+//     return api.delete(`/campaigns/${id}`);
+//   },
 
-  getAnalytics: (id: number) => {
-    return api.get(`/campaigns/${id}/analytics`);
-  },
+//   getAnalytics: (id: number) => {
+//     return api.get(`/campaigns/${id}/analytics`);
+//   },
 
-  createTest: (data: { [key: string]: unknown }) => {
-    return api.post("/campaigns/test", data);
-  },
+//   createTest: (data: { [key: string]: unknown }) => {
+//     return api.post("/campaigns/test", data);
+//   },
 
-  duplicate: (id: number) => {
-    return api.post(`/campaigns/${id}/duplicate`);
-  },
+//   duplicate: (id: number) => {
+//     return api.post(`/campaigns/${id}/duplicate`);
+//   },
 
-  activate: (id: number) => {
-    return api.post(`/campaigns/${id}/activate`);
-  },
+//   activate: (id: number) => {
+//     return api.post(`/campaigns/${id}/activate`);
+//   },
 
-  pause: (id: number) => {
-    return api.post(`/campaigns/${id}/pause`);
-  },
+//   pause: (id: number) => {
+//     return api.post(`/campaigns/${id}/pause`);
+//   },
 
-  cancel: (id: number) => {
-    return api.post(`/campaigns/${id}/cancel`);
-  },
+//   cancel: (id: number) => {
+//     return api.post(`/campaigns/${id}/cancel`);
+//   },
 
-  startMessages: (id: number, data: Record<string, unknown>) => {
-    return api.post(`/campaigns/${id}/messages`, data);
-  },
-};
+//   startMessages: (id: number, data: Record<string, unknown>) => {
+//     return api.post(`/campaigns/${id}/messages`, data);
+//   },
+// };
 
 // API для запланованих завдань
 export const scheduledTasksAPI = {

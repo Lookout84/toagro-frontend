@@ -53,14 +53,65 @@ export interface PasswordChangeRequest {
 
 export interface User {
   id: number;
-  name: string;
   email: string;
-  phoneNumber?: string;
-  avatar?: string;
+  name: string;
+  phone?: string;
   role: "user" | "admin";
+  avatarUrl?: string;
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export type CampaignType = 'EMAIL' | 'SMS' | 'PUSH' | 'MIXED';
+export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+
+export interface Campaign {
+  id: number;
+  name: string;
+  description?: string;
+  type: CampaignType | string;
+  status: CampaignStatus | string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  targetAudience?: Record<string, unknown>;
+  goal?: string;
+  budget?: number;
+  performance?: {
+    sentCount?: number;
+    deliveredCount?: number;
+    openedCount?: number;
+    clickCount?: number;
+    conversionCount?: number;
+    revenue?: number;
+  };
+  content?: Record<string, unknown>;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  createdById?: number;
+  createdBy?: {
+    id: number;
+    name: string;
+    email: string;
+  } | number;
+}
+
+export interface CampaignFormData {
+  name: string;
+  description?: string;
+  type: CampaignType;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  targetAudience?: Record<string, unknown>;
+  goal?: string;
+  budget?: number;
+}
+
+export interface MessageData {
+  messageType: 'EMAIL' | 'SMS' | 'PUSH';
+  content: string;
+  subject?: string;
+  recipientFilter?: Record<string, unknown>;
 }
 
 // Типи для оголошень
@@ -237,22 +288,8 @@ export interface AdminDashboardStats {
     data: number[];
   };
 }
-
 // Типи для кампаній
-export interface Campaign {
-  id: number;
-  name: string;
-  description?: string;
-  type: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  targetAudience?: Record<string, unknown>;
-  content: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: number;
-}
+// (see unified Campaign interface above)
 
 export interface CampaignAnalytics {
   sent: number;
