@@ -22,6 +22,7 @@ const RegistrationConfirmPage = lazy(
   () => import("../pages/RegistrationConfirmPage")
 );
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmailPage"));
+const CompanyVerificationPage = lazy(() => import('../pages/company/CompanyVerificationPage'));
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 
@@ -45,6 +46,13 @@ const CompareListingsPage = lazy(
 const UserTransactionsPage = lazy(
   () => import("../pages/profile/UserTransactionsPage")
 );
+
+// Сторінки компанії
+const CompanyDashboardPage = lazy(() => import("../pages/company/CompanyDashboardPage"));
+const CompanySetupPage = lazy(() => import("../pages/company/CompanySetupPage"));
+const CompanyDocumentsPage = lazy(() => import("../pages/company/CompanyDocumentsPage"));
+const CompanyProfilePage = lazy(() => import("../pages/company/CompanyProfilePage"));
+const CompanyEditPage = lazy(() => import("../pages/company/CompanyEditPage"));
 
 // Сторінки чату
 const ChatPage = lazy(() => import("../pages/ChatPage"));
@@ -97,6 +105,12 @@ const AdminSystemHealthPage = lazy(
 );
 const AdminQueuesPage = lazy(() => import("../pages/admin/AdminQueuesPage"));
 
+// Сторінки адміністрування компаній
+const AdminCompaniesPage = lazy(() => import("../pages/admin/AdminCompaniesPage"));
+const AdminCompanyDetailsPage = lazy(() => import("../pages/admin/AdminCompanyDetailsPage"));
+const AdminCompanyVerificationPage = lazy(() => import("../pages/admin/AdminCompanyVerificationPage"));
+const AdminDocumentsVerificationPage = lazy(() => import("../pages/admin/AdminDocumentsVerificationPage"));
+
 const AppRoutes = () => {
   return (
     <Suspense fallback={<Loader />}>
@@ -113,7 +127,8 @@ const AppRoutes = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify/:token" element={<RegistrationConfirmPage />} />
-        <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/company-verification" element={<CompanyVerificationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
@@ -189,6 +204,48 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <UserTransactionsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Сторінки компанії */}
+        <Route
+          path="/company"
+          element={
+            <ProtectedRoute>
+              <CompanyDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company/setup"
+          element={
+            <ProtectedRoute>
+              <CompanySetupPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company/profile"
+          element={
+            <ProtectedRoute>
+              <CompanyProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company/edit"
+          element={
+            <ProtectedRoute>
+              <CompanyEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/company/documents"
+          element={
+            <ProtectedRoute>
+              <CompanyDocumentsPage />
             </ProtectedRoute>
           }
         />
@@ -347,6 +404,40 @@ const AppRoutes = () => {
           element={
             <AdminRoute>
               <AdminQueuesPage />
+            </AdminRoute>
+          }
+        />
+        
+        {/* Маршрути адміністрування компаній */}
+        <Route
+          path="/admin/companies"
+          element={
+            <AdminRoute>
+              <AdminCompaniesPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/companies/:id"
+          element={
+            <AdminRoute>
+              <AdminCompanyDetailsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/companies/verification"
+          element={
+            <AdminRoute>
+              <AdminCompanyVerificationPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/documents/verification"
+          element={
+            <AdminRoute>
+              <AdminDocumentsVerificationPage />
             </AdminRoute>
           }
         />

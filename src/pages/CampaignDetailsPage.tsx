@@ -6,7 +6,7 @@ import { formatDate } from '../utils/formatters';
 import { formatCurrency } from '../utils/currencyFormatter';
 import { Loader, Button, Alert, Badge, Modal, Tabs, Tab } from '../components/common';
 import CampaignAnalytics from '../components/campaigns/CampaignAnalytics';
-import MessageForm from '../../components/campaigns/MessageForm';
+import MessageForm from '../components/campaigns/MessageForm';
 
 const CampaignDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

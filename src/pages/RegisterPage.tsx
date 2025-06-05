@@ -24,8 +24,14 @@ interface RegisterFormData {
   email: string;
   phoneNumber: string;
   password: string;
-  role: UserRole;
-  companyProfile?: Omit<CompanyFormData, keyof UserFormData>;
+  role: UserRole; // <-- Ensure 'role' is present
+  companyProfile?: {
+    companyName: string;
+    companyCode: string;
+    vatNumber?: string;
+    industry?: string;
+    website?: string;
+  };
 }
 
 interface CompanyFormData extends UserFormData {
@@ -174,59 +180,101 @@ const RegisterPage = () => {
   };
 
   // Обробник подання форми
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setServerError(null);
+  // Змініть обробник форми на:
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setServerError(null);
 
-    if (accountType === "USER") {
-      if (!validateUserForm()) {
+  if (accountType === "USER") {
+    if (!validateUserForm()) {
+      return;
+    }
+  } else {
+    // Для компанії перевіряємо обидві форми
+    if (registrationStep === 1) {
+      if (validateUserForm()) {
+        setRegistrationStep(2);
+      }
+      return;
+    } else {
+      if (!validateCompanyForm()) {
         return;
+      }
+    }
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    // Підготовка даних для відправки
+    const { confirmPassword: _confirmPassword, ...userData } = userFormData;
+    
+    if (accountType === "USER") {
+      // Реєстрація звичайного користувача
+      await register({
+        ...userData,
+        role: "USER" as UserRole
+      } as RegisterFormData);
+    } else {
+      // Реєстрація компанії
+      // Правильно структуруємо об'єкт для API
+      await register({
+        name: userData.name,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber || undefined, // уникаємо пустих рядків
+        password: userData.password,
+        role: "COMPANY" as UserRole,
+        companyProfile: {
+          companyName: companyFormData.companyName,
+          companyCode: companyFormData.companyCode,
+          vatNumber: companyFormData.vatNumber || undefined,
+          industry: companyFormData.industry || undefined,
+          website: companyFormData.website || undefined
+        }
+      } as RegisterFormData);
+    }
+    
+    navigate("/verify-email"); // Перенаправляємо на сторінку з інструкціями перевірки email
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    
+    // Більш детальна обробка помилок
+    if (error.response) {
+      if (error.response.status === 400) {
+        // Помилка валідації
+        if (error.response.data?.errors) {
+          const serverErrors: Record<string, string> = {};
+          
+          // Обробка специфічних помилок від сервера
+          Object.entries(error.response.data.errors).forEach(([key, value]) => {
+            if (key.startsWith('companyProfile.')) {
+              // Витягуємо назву поля компанії
+              const fieldName = key.replace('companyProfile.', '');
+              serverErrors[fieldName] = Array.isArray(value) ? value[0] : value as string;
+            } else {
+              serverErrors[key] = Array.isArray(value) ? value[0] : value as string;
+            }
+          });
+          
+          setErrors(prev => ({ ...prev, ...serverErrors }));
+        } else {
+          setServerError(error.response.data?.message || "Неправильні дані для реєстрації");
+        }
+      } else if (error.response.status === 500) {
+        setServerError("Помилка сервера. Спробуйте пізніше або зверніться до служби підтримки.");
+      } else if (error.response.status === 409) {
+        // Конфлікт (наприклад, email або код ЄДРПОУ вже використовуються)
+        setServerError(error.response.data?.message || "Користувач з такими даними вже існує");
+      } else {
+        setServerError("Помилка при реєстрації. Спробуйте пізніше.");
       }
     } else {
-      // Для компанії перевіряємо обидві форми
-      if (registrationStep === 1) {
-        if (validateUserForm()) {
-          setRegistrationStep(2);
-        }
-        return;
-      } else {
-        if (!validateCompanyForm()) {
-          return;
-        }
-      }
+      setServerError("Не вдалося з'єднатися з сервером. Перевірте з'єднання.");
     }
-
-    setIsSubmitting(true);
-
-    try {
-      // Підготовка даних для відправки
-      const { confirmPassword: _confirmPassword, ...userData } = userFormData;
-      
-      if (accountType === "USER") {
-        // Реєстрація звичайного користувача
-        await register({
-          ...userData,
-          role: "USER"
-        } as RegisterFormData);
-      } else {
-        // Реєстрація компанії
-        await register({
-          ...userData,
-          role: "COMPANY",
-          companyProfile: {
-            ...companyFormData
-          }
-        } as RegisterFormData);
-      }
-      
-      navigate("/");
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      setServerError(error?.response?.data?.message || "Помилка при реєстрації. Спробуйте пізніше.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="container mx-auto px-4 py-12">

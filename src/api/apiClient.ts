@@ -590,80 +590,6 @@ export const adminAPI = {
   },
 };
 
-// API для кампаній
-// export const campaignsAPI = {
-//   getAll: (params?: Record<string, unknown>) => {
-//     return api.get("/campaigns", { params });
-//   },
-
-//   create: (campaign: {
-//     name: string;
-//     description: string;
-//     startDate: string;
-//     endDate: string;
-//     [key: string]: unknown;
-//   }) => {
-//     return api.post("/campaigns", campaign);
-//   },
-
-//   getTypes: () => {
-//     return api.get("/campaigns/types");
-//   },
-
-//   getStatuses: () => {
-//     return api.get("/campaigns/statuses");
-//   },
-
-//   getById: (id: number) => {
-//     return api.get(`/campaigns/${id}`);
-//   },
-
-//   update: (
-//     id: number,
-//     campaign: {
-//       name?: string;
-//       description?: string;
-//       startDate?: string;
-//       endDate?: string;
-//       [key: string]: unknown;
-//     }
-//   ) => {
-//     return api.put(`/campaigns/${id}`, campaign);
-//   },
-
-//   delete: (id: number) => {
-//     return api.delete(`/campaigns/${id}`);
-//   },
-
-//   getAnalytics: (id: number) => {
-//     return api.get(`/campaigns/${id}/analytics`);
-//   },
-
-//   createTest: (data: { [key: string]: unknown }) => {
-//     return api.post("/campaigns/test", data);
-//   },
-
-//   duplicate: (id: number) => {
-//     return api.post(`/campaigns/${id}/duplicate`);
-//   },
-
-//   activate: (id: number) => {
-//     return api.post(`/campaigns/${id}/activate`);
-//   },
-
-//   pause: (id: number) => {
-//     return api.post(`/campaigns/${id}/pause`);
-//   },
-
-//   cancel: (id: number) => {
-//     return api.post(`/campaigns/${id}/cancel`);
-//   },
-
-//   startMessages: (id: number, data: Record<string, unknown>) => {
-//     return api.post(`/campaigns/${id}/messages`, data);
-//   },
-// };
-
 // API для запланованих завдань
 export const scheduledTasksAPI = {
   schedulListingDeactivation: (listingId: number) => {
@@ -752,6 +678,183 @@ export const queuesAPI = {
   getConsumers: () => {
     return api.get("/queues/consumers");
   },
+};
+
+// Розширення API для компаній
+export const companiesAPI = {
+  // Отримання списку компаній
+  getAll: (params?: Record<string, unknown>) => {
+    return api.get("/companies", { params });
+  },
+
+  // Отримання профілю компанії за ID
+  getById: (id: number) => {
+    return api.get(`/companies/${id}`);
+  },
+
+  // Отримання профілю компанії за ID користувача
+  getByUserId: (userId: number) => {
+    return api.get(`/users/${userId}/company`);
+  },
+
+  // Отримання власного профілю компанії (поточного користувача)
+  getMyCompany: () => {
+    return api.get("/my-company");
+  },
+
+  // Створення профілю компанії
+  create: (data: {
+    companyName: string;
+    companyCode: string; // ЄДРПОУ
+    vatNumber?: string;  // ІПН
+    website?: string;
+    industry?: string;
+    foundedYear?: number;
+    size?: "SMALL" | "MEDIUM" | "LARGE";
+    description?: string;
+    address?: {
+      country: string;
+      region?: string;
+      city: string;
+      street?: string;
+      postalCode?: string;
+    };
+    contactInfo?: Record<string, unknown>;
+  }) => {
+    return api.post("/companies", data);
+  },
+
+  // Оновлення профілю компанії
+  update: (id: number, data: {
+    companyName?: string;
+    companyCode?: string;
+    vatNumber?: string;
+    website?: string;
+    industry?: string;
+    foundedYear?: number;
+    size?: "SMALL" | "MEDIUM" | "LARGE";
+    description?: string;
+    logo?: File;
+    address?: {
+      country?: string;
+      region?: string;
+      city?: string;
+      street?: string;
+      postalCode?: string;
+    };
+    contactInfo?: Record<string, unknown>;
+  }) => {
+    // Якщо є файл logo, використовуємо FormData, інакше просто JSON
+    if (data.logo) {
+      const formData = new FormData();
+      
+      // Додаємо всі поля до FormData, крім address та contactInfo
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'address' && key !== 'contactInfo' && value !== undefined) {
+          if (key === 'logo' && value instanceof File) {
+            formData.append(key, value);
+          } else if (typeof value !== 'object') {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      
+      // Додаємо address та contactInfo як JSON рядки
+      if (data.address) {
+        formData.append('address', JSON.stringify(data.address));
+      }
+      if (data.contactInfo) {
+        formData.append('contactInfo', JSON.stringify(data.contactInfo));
+      }
+      
+      return api.put(`/companies/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      // Звичайний JSON запит, якщо немає файлів
+      return api.put(`/companies/${id}`, data);
+    }
+  },
+
+  // Видалення профілю компанії
+  delete: (id: number) => {
+    return api.delete(`/companies/${id}`);
+  },
+
+  // Додавання документа компанії
+  addDocument: (companyId: number, {
+    name,
+    type,
+    file,
+    expiresAt
+  }: {
+    name: string;
+    type: string;
+    file: File;
+    expiresAt?: Date | string;
+  }) => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('type', type);
+    formData.append('document', file);
+    
+    if (expiresAt) {
+      formData.append('expiresAt', expiresAt instanceof Date 
+        ? expiresAt.toISOString() 
+        : expiresAt);
+    }
+    
+    return api.post(`/companies/${companyId}/documents`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Отримання документів компанії
+  getDocuments: (companyId: number) => {
+    return api.get(`/companies/${companyId}/documents`);
+  },
+
+  // Отримання документа компанії за ID
+  getDocumentById: (companyId: number, documentId: number) => {
+    return api.get(`/companies/${companyId}/documents/${documentId}`);
+  },
+
+  // Видалення документа компанії
+  deleteDocument: (companyId: number, documentId: number) => {
+    return api.delete(`/companies/${companyId}/documents/${documentId}`);
+  },
+
+  // Адмін-методи
+  admin: {
+    // Верифікація компанії
+    verifyCompany: (companyId: number, isVerified: boolean) => {
+      return api.post(`/companies/${companyId}/verify`, { isVerified });
+    },
+    
+    // Верифікація документа
+    verifyDocument: (documentId: number, isVerified: boolean) => {
+      return api.post(`/documents/${documentId}/verify`, { isVerified });
+    },
+    
+    // Отримання всіх компаній для адміністрування
+    getAllCompanies: (params?: Record<string, unknown>) => {
+      return api.get("/admin/companies", { params });
+    },
+    
+    // Отримання непідтверджених компаній
+    getUnverifiedCompanies: () => {
+      return api.get("/admin/companies/unverified");
+    },
+    
+    // Отримання непідтверджених документів
+    getUnverifiedDocuments: () => {
+      return api.get("/admin/documents/unverified");
+    }
+  }
 };
 
 // API для перевірки працездатності

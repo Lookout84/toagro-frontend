@@ -89,7 +89,7 @@ const VerifyEmailPage = () => {
                   <div className="block text-gray-600 mt-4">
                     Проблеми з підтвердженням?{" "}
                     <Link to="/contact" className="text-blue-600 hover:underline">
-                      Зв'язатися з підтримкою
+                      Зв&#39;язатися з підтримкою
                     </Link>
                   </div>
                 </div>

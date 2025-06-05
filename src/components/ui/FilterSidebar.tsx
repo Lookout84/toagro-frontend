@@ -395,7 +395,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ fixedCondition }) => {
           Фільтри
         </Button>
         <Button
-          variant="ghost"
+          variant="outline"
           onClick={clearFilters}
           icon={<RefreshCw size={14} />}
           className="text-sm text-gray-500 hover:text-green-600"
@@ -452,8 +452,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ fixedCondition }) => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Фільтри</h2>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="small"
               onClick={clearFilters}
               icon={<RefreshCw size={14} />}
               className="text-sm text-gray-500 hover:text-green-600"
