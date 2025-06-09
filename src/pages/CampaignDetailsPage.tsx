@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/currencyFormatter';
 import { Loader, Button, Alert, Badge, Modal, Tabs, Tab } from '../components/common';
 import CampaignAnalytics from '../components/campaigns/CampaignAnalytics';
 import MessageForm from '../components/campaigns/MessageForm';
+import type { BadgeColor } from '../components/common/Badge';
 
 const CampaignDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,9 +96,8 @@ const CampaignDetailsPage: React.FC = () => {
       setShowDeleteModal(false);
     }
   };
-
   const getStatusBadge = (status: CampaignStatus) => {
-    const statusConfig: Record<CampaignStatus, { color: string; label: string }> = {
+    const statusConfig: Record<CampaignStatus, { color: BadgeColor; label: string }> = {
       DRAFT: { color: 'gray', label: 'Чернетка' },
       ACTIVE: { color: 'green', label: 'Активна' },
       PAUSED: { color: 'yellow', label: 'Призупинена' },
@@ -200,7 +200,6 @@ const CampaignDetailsPage: React.FC = () => {
           <Button
             onClick={() => setShowDeleteModal(true)}
             variant="danger"
-            outline
           >
             Видалити
           </Button>
@@ -307,7 +306,7 @@ const CampaignDetailsPage: React.FC = () => {
       >
         <MessageForm
           campaignId={Number(id)}
-          campaignType={campaign.type}
+          campaignType={campaign.type as import('../types/api').CampaignType}
           onClose={() => setShowMessageModal(false)}
         />
       </Modal>

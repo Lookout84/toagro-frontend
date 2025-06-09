@@ -130,7 +130,7 @@ export const campaignsAPI = {
   create: (campaign: {
     name: string;
     description?: string;
-    type: string; // CampaignType 
+    type: string; // CampaignType
     status?: string; // CampaignStatus
     startDate?: string | Date;
     endDate?: string | Date;
@@ -180,7 +180,7 @@ export const campaignsAPI = {
     return api.get(`/campaigns/${id}/analytics`);
   },
 
-  createTest: (data: { 
+  createTest: (data: {
     name: string;
     type: string;
     targetAudience?: Record<string, unknown>;
@@ -204,12 +204,15 @@ export const campaignsAPI = {
     return api.post(`/campaigns/${id}/cancel`);
   },
 
-  startMessages: (id: number, data: {
-    messageType: string;
-    content: string;
-    subject?: string;
-    recipientFilter?: Record<string, unknown>;
-  }) => {
+  startMessages: (
+    id: number,
+    data: {
+      messageType: string;
+      content: string;
+      subject?: string;
+      recipientFilter?: Record<string, unknown>;
+    }
+  ) => {
     return api.post(`/campaigns/${id}/messages`, data);
   },
 };
@@ -506,6 +509,83 @@ export const adminAPI = {
     return api.get("/admin/users", { params });
   },
 
+  // rejectDocument: (
+  //   companyId: number,
+  //   documentId: number,
+  //   data: { reason: string }
+  // ) =>
+  //   axios.post(
+  //     `/admin/companies/${companyId}/documents/${documentId}/reject`,
+  //     data
+  //   ),
+
+  // getCompanies: (params?: Record<string, unknown>) =>
+  //   axios.get("/admin/companies", { params }),
+
+  getCompany: (id: number) => axios.get(`/admin/companies/${id}`),
+
+  getCompanyVerificationHistory: (companyId: number) =>
+    axios.get(`/admin/companies/${companyId}/verification-history`),
+
+  getCompanyListings: (companyId: number) => {
+    return api.get(`/admin/companies/${companyId}/listings`);
+  },
+  getCompanyDocuments: (companyId: number) => {
+    return api.get(`/admin/companies/${companyId}/documents`);
+  },
+
+  getCompanyStats: (companyId: number) => {
+    return api.get(`/admin/companies/${companyId}/stats`);
+  },
+  // If you need the axiosInstance version, rename it:
+  // getCompanyVerificationHistoryWithInstance: (id: number) =>
+  //   axiosInstance.get(`/admin/companies/${id}/verification-history`),
+
+  // Removed duplicate definitions: verifyCompany, rejectCompany, verifyDocument, rejectDocument
+  getUser: (userId: number) => api.get(`/admin/users/${userId}`),
+  getUserCompanies: (userId: number) => {
+    return api.get(`/admin/users/${userId}/companies`);
+  },
+  getUserListings: (userId: number, params?: Record<string, unknown>) => {
+    return api.get(`/admin/users/${userId}/listings`, { params });
+  },
+  getUserTransactions: (userId: number, params?: Record<string, unknown>) => {
+    return api.get(`/admin/users/${userId}/transactions`, { params });
+  },
+  getUserNotifications: (userId: number, params?: Record<string, unknown>) => {
+    return api.get(`/admin/users/${userId}/notifications`, { params });
+  },
+  getUserMessages: (userId: number, params?: Record<string, unknown>) => {
+    return api.get(`/admin/users/${userId}/messages`, { params });
+  },
+
+  getCompaniesForVerification: (params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    status: string;
+    fromDate?: string;
+    toDate?: string;
+    sortBy: string;
+  }) => axios.get("/admin/companies/verification", { params }),
+
+  getDocumentsForVerification: (params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    status: string;
+    type?: string;
+    fromDate?: string;
+    toDate?: string;
+    sortBy: string;
+    companyId?: number;
+  }) => axios.get("/admin/documents/verification", { params }),
+
+  blockCompany: (
+    companyId: number,
+    data: { reason: string; durationDays: number }
+  ) => api.post(`/admin/companies/${companyId}/block`, data),
+
   updateUserRole: (userId: number, role: string) => {
     return api.put(`/admin/users/${userId}/role`, { role });
   },
@@ -588,6 +668,28 @@ export const adminAPI = {
   previewFilteredUsers: (filter: { [key: string]: unknown }) => {
     return api.post("/bulk-notifications/filter-users", filter);
   },
+
+  getUserActivity: (userId: number, params?: Record<string, unknown>) => {
+    return api.get(`/admin/users/${userId}/activity`, { params });
+  },
+  getCompanies: (params?: Record<string, unknown>) =>
+    axios.get("/admin/companies", { params }),
+  // Removed duplicate getCompanyDocuments to avoid property name conflict
+  verifyCompany: (companyId: number) =>
+    api.post(`/admin/companies/${companyId}/verify`),
+  rejectCompany: (companyId: number, data: { reason: string }) =>
+    api.post(`/admin/companies/${companyId}/reject`, data),
+  verifyDocument: (companyId: number, documentId: number) =>
+    axios.post(`/admin/companies/${companyId}/documents/${documentId}/verify`),
+  rejectDocument: (
+    companyId: number,
+    documentId: number,
+    data: { reason: string }
+  ) =>
+    api.post(
+      `/admin/companies/${companyId}/documents/${documentId}/reject`,
+      data
+    ),
 };
 
 // API для запланованих завдань
@@ -701,12 +803,13 @@ export const companiesAPI = {
   getMyCompany: () => {
     return api.get("/my-company");
   },
-
+  getCompanyReviews: (companyId: number) =>
+    axios.get(`/companies/${companyId}/reviews`),
   // Створення профілю компанії
   create: (data: {
     companyName: string;
     companyCode: string; // ЄДРПОУ
-    vatNumber?: string;  // ІПН
+    vatNumber?: string; // ІПН
     website?: string;
     industry?: string;
     foundedYear?: number;
@@ -725,51 +828,54 @@ export const companiesAPI = {
   },
 
   // Оновлення профілю компанії
-  update: (id: number, data: {
-    companyName?: string;
-    companyCode?: string;
-    vatNumber?: string;
-    website?: string;
-    industry?: string;
-    foundedYear?: number;
-    size?: "SMALL" | "MEDIUM" | "LARGE";
-    description?: string;
-    logo?: File;
-    address?: {
-      country?: string;
-      region?: string;
-      city?: string;
-      street?: string;
-      postalCode?: string;
-    };
-    contactInfo?: Record<string, unknown>;
-  }) => {
+  update: (
+    id: number,
+    data: {
+      companyName?: string;
+      companyCode?: string;
+      vatNumber?: string;
+      website?: string;
+      industry?: string;
+      foundedYear?: number;
+      size?: "SMALL" | "MEDIUM" | "LARGE";
+      description?: string;
+      logo?: File;
+      address?: {
+        country?: string;
+        region?: string;
+        city?: string;
+        street?: string;
+        postalCode?: string;
+      };
+      contactInfo?: Record<string, unknown>;
+    }
+  ) => {
     // Якщо є файл logo, використовуємо FormData, інакше просто JSON
     if (data.logo) {
       const formData = new FormData();
-      
+
       // Додаємо всі поля до FormData, крім address та contactInfo
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'address' && key !== 'contactInfo' && value !== undefined) {
-          if (key === 'logo' && value instanceof File) {
+        if (key !== "address" && key !== "contactInfo" && value !== undefined) {
+          if (key === "logo" && value instanceof File) {
             formData.append(key, value);
-          } else if (typeof value !== 'object') {
+          } else if (typeof value !== "object") {
             formData.append(key, String(value));
           }
         }
       });
-      
+
       // Додаємо address та contactInfo як JSON рядки
       if (data.address) {
-        formData.append('address', JSON.stringify(data.address));
+        formData.append("address", JSON.stringify(data.address));
       }
       if (data.contactInfo) {
-        formData.append('contactInfo', JSON.stringify(data.contactInfo));
+        formData.append("contactInfo", JSON.stringify(data.contactInfo));
       }
-      
+
       return api.put(`/companies/${id}`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
     } else {
@@ -782,33 +888,40 @@ export const companiesAPI = {
   delete: (id: number) => {
     return api.delete(`/companies/${id}`);
   },
-
+  updateCompanyLogo: (id: number, formData: FormData) =>
+    api.post(`/companies/${id}/logo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   // Додавання документа компанії
-  addDocument: (companyId: number, {
-    name,
-    type,
-    file,
-    expiresAt
-  }: {
-    name: string;
-    type: string;
-    file: File;
-    expiresAt?: Date | string;
-  }) => {
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('type', type);
-    formData.append('document', file);
-    
-    if (expiresAt) {
-      formData.append('expiresAt', expiresAt instanceof Date 
-        ? expiresAt.toISOString() 
-        : expiresAt);
+  addDocument: (
+    companyId: number,
+    {
+      name,
+      type,
+      file,
+      expiresAt,
+    }: {
+      name: string;
+      type: string;
+      file: File;
+      expiresAt?: Date | string;
     }
-    
+  ) => {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("type", type);
+    formData.append("document", file);
+
+    if (expiresAt) {
+      formData.append(
+        "expiresAt",
+        expiresAt instanceof Date ? expiresAt.toISOString() : expiresAt
+      );
+    }
+
     return api.post(`/companies/${companyId}/documents`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
   },
@@ -834,27 +947,27 @@ export const companiesAPI = {
     verifyCompany: (companyId: number, isVerified: boolean) => {
       return api.post(`/companies/${companyId}/verify`, { isVerified });
     },
-    
+
     // Верифікація документа
     verifyDocument: (documentId: number, isVerified: boolean) => {
       return api.post(`/documents/${documentId}/verify`, { isVerified });
     },
-    
+
     // Отримання всіх компаній для адміністрування
     getAllCompanies: (params?: Record<string, unknown>) => {
       return api.get("/admin/companies", { params });
     },
-    
+
     // Отримання непідтверджених компаній
     getUnverifiedCompanies: () => {
       return api.get("/admin/companies/unverified");
     },
-    
+
     // Отримання непідтверджених документів
     getUnverifiedDocuments: () => {
       return api.get("/admin/documents/unverified");
-    }
-  }
+    },
+  },
 };
 
 // API для перевірки працездатності

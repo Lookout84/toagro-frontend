@@ -108,7 +108,10 @@ const CompanyProfilePage: React.FC = () => {
         
         // Розрахунок середнього рейтингу
         if (reviewsResponse.data.length > 0) {
-          const totalRating = reviewsResponse.data.reduce((sum, review) => sum + review.rating, 0);
+          const totalRating: number = (reviewsResponse.data as CompanyReview[]).reduce(
+            (sum: number, review: CompanyReview) => sum + review.rating,
+            0
+          );
           setAverageRating(totalRating / reviewsResponse.data.length);
         }
       } catch (err: any) {
@@ -414,8 +417,8 @@ const CompanyProfilePage: React.FC = () => {
         
         {/* Вкладки з інформацією */}
         <div className="mb-8">
-          <Tabs activeTab={activeTab} onChange={setActiveTab}>
-            <Tab label="Контактна інформація">
+          <Tabs defaultActiveTab={activeTab} onChange={setActiveTab}>
+            <Tab title="Контактна інформація">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Контактна інформація</h3>
                 
@@ -506,7 +509,7 @@ const CompanyProfilePage: React.FC = () => {
               </div>
             </Tab>
             
-            <Tab label="Оголошення">
+            <Tab title="Оголошення">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Оголошення компанії</h3>
@@ -544,7 +547,7 @@ const CompanyProfilePage: React.FC = () => {
               </div>
             </Tab>
             
-            <Tab label="Відгуки">
+            <Tab title="Відгуки">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Відгуки про компанію</h3>
@@ -568,7 +571,7 @@ const CompanyProfilePage: React.FC = () => {
                     <Star className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                     <h4 className="text-xl font-medium text-gray-900 mb-2">Немає відгуків</h4>
                     <p className="text-gray-600 max-w-md mx-auto mb-4">
-                      У вашої компанії ще немає відгуків. Відгуки з'являться після взаємодії з клієнтами.
+                      У вашої компанії ще немає відгуків. Відгуки з&#39;являться після взаємодії з клієнтами.
                     </p>
                   </div>
                 )}

@@ -29,6 +29,7 @@ interface AuthContextProps {
   register: (formData: RegisterFormData) => Promise<void>;
   logout: () => void;
   updateUserProfile: (formData: UpdateProfileFormData) => Promise<void>;
+  getProfileUrl: () => string;
 }
 
 interface AuthProviderProps {
@@ -59,6 +60,7 @@ const AuthContext = createContext<AuthContextProps>({
   register: async () => {},
   logout: () => {},
   updateUserProfile: async () => {},
+  getProfileUrl: () => "/login",
 });
 
 // Провайдер контексту
@@ -207,6 +209,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+
+  const getProfileUrl = () => {
+  if (!user) return "/login";
+  
+  switch (user.role) {
+    case "COMPANY":
+      return "/company";
+    case "ADMIN":
+      return "/admin";
+    default:
+      return "/profile";
+  }
+};
+
   // Передаємо значення в контекст
   const contextValue: AuthContextProps = {
     user,
@@ -218,6 +234,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     register,
     logout,
     updateUserProfile,
+    getProfileUrl,
   };
 
   return (

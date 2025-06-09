@@ -155,7 +155,7 @@ const UserListingsPage: React.FC = () => {
           <div className="flex space-x-2">
             <Button
               variant="outline"
-              size="sm"
+              size="small"
               icon={<RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />}
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -166,7 +166,7 @@ const UserListingsPage: React.FC = () => {
             <Link to="/listings/create">
               <Button
                 variant="primary"
-                size="sm"
+                size="small"
                 icon={<Plus size={16} />}
               >
                 Додати оголошення
@@ -262,27 +262,33 @@ const UserListingsPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <Link to={`/listings/${listing.id}`}>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant="outline"
+                          size="small"
                           icon={<Eye size={14} />}
                           title="Переглянути"
-                        />
+                        >
+                          Переглянути
+                        </Button>
                       </Link>
                       <Link to={`/listings/edit/${listing.id}`}>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant="outline"
+                          size="small"
                           icon={<Edit2 size={14} />}
                           title="Редагувати"
-                        />
+                        >
+                          Редагувати
+                        </Button>
                       </Link>
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        variant="outline"
+                        size="small"
                         icon={<Trash2 size={14} />}
                         title="Видалити"
                         onClick={() => handleOpenDeleteModal(listing.id)}
-                      />
+                      >
+                        Видалити
+                      </Button>
                     </td>
                   </tr>
                 ))}

@@ -22,11 +22,14 @@ const RegistrationConfirmPage = lazy(
   () => import("../pages/RegistrationConfirmPage")
 );
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmailPage"));
-const CompanyVerificationPage = lazy(() => import('../pages/company/CompanyVerificationPage'));
+const CompanyVerificationPage = lazy(
+  () => import("../pages/company/CompanyVerificationPage")
+);
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 
 // Сторінки профілю користувача
+const ProfileRedirectPage = lazy(() => import("../components/common/ProfileRedirectPage"));
 const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
 const UserListingsPage = lazy(
   () => import("../pages/profile/UserListingsPage")
@@ -48,10 +51,18 @@ const UserTransactionsPage = lazy(
 );
 
 // Сторінки компанії
-const CompanyDashboardPage = lazy(() => import("../pages/company/CompanyDashboardPage"));
-const CompanySetupPage = lazy(() => import("../pages/company/CompanySetupPage"));
-const CompanyDocumentsPage = lazy(() => import("../pages/company/CompanyDocumentsPage"));
-const CompanyProfilePage = lazy(() => import("../pages/company/CompanyProfilePage"));
+const CompanyDashboardPage = lazy(
+  () => import("../pages/company/CompanyDashboardPage")
+);
+const CompanySetupPage = lazy(
+  () => import("../pages/company/CompanySetupPage")
+);
+const CompanyDocumentsPage = lazy(
+  () => import("../pages/company/CompanyDocumentsPage")
+);
+const CompanyProfilePage = lazy(
+  () => import("../pages/company/CompanyProfilePage")
+);
 const CompanyEditPage = lazy(() => import("../pages/company/CompanyEditPage"));
 
 // Сторінки чату
@@ -106,10 +117,18 @@ const AdminSystemHealthPage = lazy(
 const AdminQueuesPage = lazy(() => import("../pages/admin/AdminQueuesPage"));
 
 // Сторінки адміністрування компаній
-const AdminCompaniesPage = lazy(() => import("../pages/admin/AdminCompaniesPage"));
-const AdminCompanyDetailsPage = lazy(() => import("../pages/admin/AdminCompanyDetailsPage"));
-const AdminCompanyVerificationPage = lazy(() => import("../pages/admin/AdminCompanyVerificationPage"));
-const AdminDocumentsVerificationPage = lazy(() => import("../pages/admin/AdminDocumentsVerificationPage"));
+const AdminCompaniesPage = lazy(
+  () => import("../pages/admin/AdminCompaniesPage")
+);
+const AdminCompanyDetailsPage = lazy(
+  () => import("../pages/admin/AdminCompanyDetailsPage")
+);
+const AdminCompanyVerificationPage = lazy(
+  () => import("../pages/admin/AdminCompanyVerificationPage")
+);
+const AdminDocumentsVerificationPage = lazy(
+  () => import("../pages/admin/AdminDocumentsVerificationPage")
+);
 
 const AppRoutes = () => {
   return (
@@ -128,7 +147,10 @@ const AppRoutes = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify/:token" element={<RegistrationConfirmPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/company-verification" element={<CompanyVerificationPage />} />
+        <Route
+          path="/company-verification"
+          element={<CompanyVerificationPage />}
+        />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
@@ -149,7 +171,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-
+        <Route path="/account" element={<ProfileRedirectPage />} />
         {/* Сторінки профілю користувача */}
         <Route
           path="/profile"
@@ -407,7 +429,7 @@ const AppRoutes = () => {
             </AdminRoute>
           }
         />
-        
+
         {/* Маршрути адміністрування компаній */}
         <Route
           path="/admin/companies"
