@@ -15,7 +15,18 @@ import {
   Activity
 } from "lucide-react";
 import Loader from "../../components/common/Loader";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
 
 const AdminDashboardPage = () => {
   const dispatch = useAppDispatch();
@@ -26,10 +37,6 @@ const AdminDashboardPage = () => {
     dispatch(fetchDashboardStats());
   }, [dispatch]);
 
-  if (isLoading && !dashboardStats) {
-    return <Loader />;
-  }
-
   // Форматування суми
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
@@ -39,6 +46,10 @@ const AdminDashboardPage = () => {
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  if (isLoading && !dashboardStats) {
+    return <Loader />;
+  }
 
   return (
     <div className="space-y-6">
@@ -150,28 +161,34 @@ const AdminDashboardPage = () => {
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-gray-700 font-medium mb-6">Зростання користувачів</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={dashboardStats.userGrowth.labels.map((label, index) => ({
-                      name: label,
-                      value: dashboardStats.userGrowth.data[index]
-                    }))}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#4F46E5"
-                      activeDot={{ r: 8 }}
-                      name="Нові користувачі"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {dashboardStats.userGrowth && dashboardStats.userGrowth.labels ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dashboardStats.userGrowth.labels.map((label: string, index: number) => ({
+                        name: label,
+                        value: dashboardStats.userGrowth.data[index]
+                      }))}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#4F46E5"
+                        activeDot={{ r: 8 }}
+                        name="Нові користувачі"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    Немає даних для графіка
+                  </div>
+                )}
               </div>
             </div>
 
@@ -179,22 +196,28 @@ const AdminDashboardPage = () => {
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-gray-700 font-medium mb-6">Нові оголошення</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={dashboardStats.listingGrowth.labels.map((label, index) => ({
-                      name: label,
-                      value: dashboardStats.listingGrowth.data[index]
-                    }))}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" fill="#16A34A" name="Нові оголошення" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {dashboardStats.listingGrowth && dashboardStats.listingGrowth.labels ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={dashboardStats.listingGrowth.labels.map((label: string, index: number) => ({
+                        name: label,
+                        value: dashboardStats.listingGrowth.data[index]
+                      }))}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" fill="#16A34A" name="Нові оголошення" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    Немає даних для графіка
+                  </div>
+                )}
               </div>
             </div>
 
@@ -202,67 +225,70 @@ const AdminDashboardPage = () => {
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-gray-700 font-medium mb-6">Дохід</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={dashboardStats.revenueGrowth.labels.map((label, index) => ({
-                      name: label,
-                      value: dashboardStats.revenueGrowth.data[index]
-                    }))}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Дохід"]} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#FBBF24"
-                      activeDot={{ r: 8 }}
-                      name="Дохід"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {dashboardStats.revenueGrowth && dashboardStats.revenueGrowth.labels ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dashboardStats.revenueGrowth.labels.map((label: string, index: number) => ({
+                        name: label,
+                        value: dashboardStats.revenueGrowth.data[index]
+                      }))}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Дохід"]} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#FBBF24"
+                        activeDot={{ r: 8 }}
+                        name="Дохід"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    Немає даних для графіка
+                  </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Швидкі посилання */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-              <h3 className="text-gray-700 font-medium mb-6">Швидкі дії</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <Link
-                  to="/admin/campaigns/create"
-                  className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
-                >
-                  <Bell size={24} className="text-blue-500 mb-2" />
-                  <span className="text-gray-700 font-medium">Створити кампанію</span>
-                </Link>
-                
-                <Link
-                  to="/admin/categories"
-                  className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
-                >
-                  <Tag size={24} className="text-green-500 mb-2" />
-                  <span className="text-gray-700 font-medium">Керувати категоріями</span>
-                </Link>
-                
-                <Link
-                  to="/admin/scheduled-tasks"
-                  className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
-                >
-                  <Clock size={24} className="text-purple-500 mb-2" />
-                  <span className="text-gray-700 font-medium">Заплановані завдання</span>
-                </Link>
-                
-                <Link
-                  to="/admin/notifications/templates"
-                  className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
-                >
-                  <Bell size={24} className="text-yellow-500 mb-2" />
-                  <span className="text-gray-700 font-medium">Шаблони сповіщень</span>
-                </Link>
-              </div>
+          {/* Швидкі посилання */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-gray-700 font-medium mb-6">Швидкі дії</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Link
+                to="/admin/campaigns/create"
+                className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
+              >
+                <Bell size={24} className="text-blue-500 mb-2" />
+                <span className="text-gray-700 font-medium">Створити кампанію</span>
+              </Link>
+              <Link
+                to="/admin/categories"
+                className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
+              >
+                <Tag size={24} className="text-green-500 mb-2" />
+                <span className="text-gray-700 font-medium">Керувати категоріями</span>
+              </Link>
+              <Link
+                to="/admin/scheduled-tasks"
+                className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
+              >
+                <Clock size={24} className="text-purple-500 mb-2" />
+                <span className="text-gray-700 font-medium">Заплановані завдання</span>
+              </Link>
+              <Link
+                to="/admin/notifications/templates"
+                className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg flex flex-col items-center text-center transition-colors"
+              >
+                <Bell size={24} className="text-yellow-500 mb-2" />
+                <span className="text-gray-700 font-medium">Шаблони сповіщень</span>
+              </Link>
             </div>
           </div>
 
@@ -276,8 +302,6 @@ const AdminDashboardPage = () => {
                   Переглянути всі
                 </Link>
               </div>
-              
-              {/* Тут буде компонент для відображення запланованих завдань */}
               <div className="space-y-2">
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <Calendar size={18} className="text-gray-400 mr-3" />
@@ -289,7 +313,6 @@ const AdminDashboardPage = () => {
                     Заплановано
                   </span>
                 </div>
-                
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <Bell size={18} className="text-gray-400 mr-3" />
                   <div className="flex-1">
@@ -311,8 +334,6 @@ const AdminDashboardPage = () => {
                   Переглянути всі
                 </Link>
               </div>
-              
-              {/* Тут буде компонент для відображення активних кампаній */}
               <div className="space-y-2">
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <Bell size={18} className="text-gray-400 mr-3" />
@@ -324,7 +345,6 @@ const AdminDashboardPage = () => {
                     Активна
                   </span>
                 </div>
-                
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <Bell size={18} className="text-gray-400 mr-3" />
                   <div className="flex-1">
@@ -346,8 +366,6 @@ const AdminDashboardPage = () => {
                   Переглянути всі
                 </Link>
               </div>
-              
-              {/* Тут буде компонент для відображення останніх транзакцій */}
               <div className="space-y-2">
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <CreditCard size={18} className="text-gray-400 mr-3" />
@@ -359,7 +377,6 @@ const AdminDashboardPage = () => {
                     {formatCurrency(1500)}
                   </span>
                 </div>
-                
                 <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                   <CreditCard size={18} className="text-gray-400 mr-3" />
                   <div className="flex-1">

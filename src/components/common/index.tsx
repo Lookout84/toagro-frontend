@@ -15,6 +15,8 @@ export {Dropdown, DropdownItem} from './Dropdown';
 export {DateRangePicker} from './DateRangePicker';
 // ...existing exports
 export { default as EmptyState } from "./EmptyState";
+export {default as Table} from "./Table";
+
 
 
 // Типи, що можуть бути потрібні при імпорті

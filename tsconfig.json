@@ -43,6 +43,6 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src"],
+  "include": ["src"],src/pages/admin/AdminScheduledTasksPage.tsx
   "exclude": ["node_modules", "build", "dist"]
 }

@@ -508,7 +508,22 @@ export const adminAPI = {
   getUsers: (params?: Record<string, unknown>) => {
     return api.get("/admin/users", { params });
   },
-
+  getUserById: (id: string | number) => axios.get(`/admin/users/${id}`),
+  updateUser: (userId: number, data: Record<string, unknown>) =>
+    api.put(`/admin/users/${userId}`, data),
+  // rejectDocument: (companyId: number, documentId: number, data: { reason: string }) =>
+  //   api.post(`/admin/companies/${companyId}/documents/${documentId}/reject`, data),
+  rejectDocument: (
+    companyId: number,
+    documentId: number,
+    data: { reason: string }
+  ) =>
+    api.post(
+      `/admin/companies/${companyId}/documents/${documentId}/reject`,
+      data
+    ),
+  createCampaign: (data: { title: string; description: string; goal: number; status: string }) =>
+    api.post("/admin/campaigns", data),
   // rejectDocument: (
   //   companyId: number,
   //   documentId: number,
@@ -521,12 +536,32 @@ export const adminAPI = {
 
   // getCompanies: (params?: Record<string, unknown>) =>
   //   axios.get("/admin/companies", { params }),
-
+  getSystemHealth: () => api.get("/admin/system-health"),
   getCompany: (id: number) => axios.get(`/admin/companies/${id}`),
-
+  createCategory: (data: { name: string; parentId?: number | null }) =>
+    api.post("/admin/categories", data),
+  deleteCategory: (id: number) => api.delete(`/admin/categories/${id}`),
+  updateCategory(id: number, data: { name: string; slug?: string }) {
+    return api.put(`/categories/${id}`, data);
+  },
+  cancelBulkTask: (taskId: number) =>
+    api.delete(`/admin/scheduled-tasks/${taskId}`),
   getCompanyVerificationHistory: (companyId: number) =>
-    axios.get(`/admin/companies/${companyId}/verification-history`),
-
+    api.get(`/admin/companies/${companyId}/verification-history`),
+  getScheduledTasks: (params?: Record<string, unknown>) =>
+    api.get("/admin/scheduled-tasks", { params }),
+  pauseScheduledTask: (taskId: number) =>
+    api.post(`/admin/scheduled-tasks/${taskId}/pause`),
+  resumeScheduledTask: (taskId: number) =>
+    api.post(`/admin/scheduled-tasks/${taskId}/resume`),
+  getScheduledTaskById: (id: number) => api.get(`/admin/scheduled-tasks/${id}`),
+  cancelScheduledTask: (id: number) =>
+    api.post(`/admin/scheduled-tasks/${id}/cancel`),
+  getScheduledTaskTypes: () => api.get("/admin/scheduled-tasks/types"),
+  getRecurringTasks: (params?: Record<string, unknown>) =>
+    api.get("/admin/recurring-tasks", { params }),
+  cancelRecurringTask: (id: number) =>
+    api.post(`/admin/recurring-tasks/${id}/cancel`),
   getCompanyListings: (companyId: number) => {
     return api.get(`/admin/companies/${companyId}/listings`);
   },
@@ -657,10 +692,6 @@ export const adminAPI = {
     return api.get(`/bulk-notifications/tasks/${id}`);
   },
 
-  cancelBulkTask: (id: number) => {
-    return api.delete(`/bulk-notifications/tasks/${id}`);
-  },
-
   getActiveJobs: () => {
     return api.get("/bulk-notifications/active-jobs");
   },
@@ -673,23 +704,15 @@ export const adminAPI = {
     return api.get(`/admin/users/${userId}/activity`, { params });
   },
   getCompanies: (params?: Record<string, unknown>) =>
-    axios.get("/admin/companies", { params }),
+    api.get("/admin/companies", { params }),
   // Removed duplicate getCompanyDocuments to avoid property name conflict
   verifyCompany: (companyId: number) =>
     api.post(`/admin/companies/${companyId}/verify`),
   rejectCompany: (companyId: number, data: { reason: string }) =>
     api.post(`/admin/companies/${companyId}/reject`, data),
   verifyDocument: (companyId: number, documentId: number) =>
-    axios.post(`/admin/companies/${companyId}/documents/${documentId}/verify`),
-  rejectDocument: (
-    companyId: number,
-    documentId: number,
-    data: { reason: string }
-  ) =>
-    api.post(
-      `/admin/companies/${companyId}/documents/${documentId}/reject`,
-      data
-    ),
+    api.post(`/admin/companies/${companyId}/documents/${documentId}/verify`),
+  
 };
 
 // API для запланованих завдань
@@ -967,6 +990,57 @@ export const companiesAPI = {
     getUnverifiedDocuments: () => {
       return api.get("/admin/documents/unverified");
     },
+  },
+};
+
+// В apiClient.ts додайте наступне
+export const moderatorAPI = {
+  getDashboardStats: () => {
+    return axios.get("/api/moderator/dashboard/stats");
+  },
+
+  getListings: (params?: Record<string, unknown>) => {
+    return axios.get("/api/moderator/listings", { params });
+  },
+
+  approveListing: (id: number) => {
+    return axios.put(`/api/moderator/listings/${id}/approve`);
+  },
+
+  rejectListing: (id: number, reason: string) => {
+    return axios.put(`/api/moderator/listings/${id}/reject`, { reason });
+  },
+
+  getCompanies: (params?: Record<string, unknown>) => {
+    return axios.get("/api/moderator/companies", { params });
+  },
+
+  verifyCompany: (id: number) => {
+    return axios.put(`/api/moderator/companies/${id}/verify`);
+  },
+
+  rejectCompany: (id: number, reason: string) => {
+    return axios.put(`/api/moderator/companies/${id}/reject`, { reason });
+  },
+
+  getDocuments: (params?: Record<string, unknown>) => {
+    return axios.get("/api/moderator/documents", { params });
+  },
+
+  verifyDocument: (id: number) => {
+    return axios.put(`/api/moderator/documents/${id}/verify`);
+  },
+
+  rejectDocument: (id: number, reason: string) => {
+    return axios.put(`/api/moderator/documents/${id}/reject`, { reason });
+  },
+
+  getReports: (params?: Record<string, unknown>) => {
+    return axios.get("/api/moderator/reports", { params });
+  },
+
+  resolveReport: (id: number, action: string, note: string) => {
+    return axios.put(`/api/moderator/reports/${id}/resolve`, { action, note });
   },
 };
 
