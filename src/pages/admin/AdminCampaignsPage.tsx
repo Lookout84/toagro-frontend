@@ -112,9 +112,9 @@ const AdminCampaignsPage = () => {
   };
   
   // Форматування дати
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Не визначено";
-    const date = new Date(dateString);
+  const formatDate = (dateInput?: string | Date) => {
+    if (!dateInput) return "Не визначено";
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
     return date.toLocaleDateString("uk-UA", {
       day: "numeric",
       month: "long",

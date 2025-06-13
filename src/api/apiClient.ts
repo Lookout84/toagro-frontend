@@ -524,6 +524,7 @@ export const adminAPI = {
     ),
   createCampaign: (data: { title: string; description: string; goal: number; status: string }) =>
     api.post("/admin/campaigns", data),
+  getCampaign: (id: string | undefined) => api.get(`/admin/campaigns/${id}`),
   // rejectDocument: (
   //   companyId: number,
   //   documentId: number,

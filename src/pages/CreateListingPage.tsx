@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
@@ -19,7 +20,7 @@ import LocationSelector from "../components/ui/LocationSelector";
 // Add Leaflet to the Window type for TypeScript
 declare global {
   interface Window {
-    L: any;
+    L: typeof import("leaflet");
   }
 }
 
@@ -580,6 +581,7 @@ const CreateListingPage = () => {
               }}
               onChange={handleLocationChange}
               mapLoaded={mapLoaded}
+              useCountryCoordinates={true}
             />
 
             {/* Завантаження зображень - використовуємо компонент ImageUploader */}
