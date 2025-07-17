@@ -522,8 +522,12 @@ export const adminAPI = {
       `/admin/companies/${companyId}/documents/${documentId}/reject`,
       data
     ),
-  createCampaign: (data: { title: string; description: string; goal: number; status: string }) =>
-    api.post("/admin/campaigns", data),
+  createCampaign: (data: {
+    title: string;
+    description: string;
+    goal: number;
+    status: string;
+  }) => api.post("/admin/campaigns", data),
   getCampaign: (id: string | undefined) => api.get(`/admin/campaigns/${id}`),
   // rejectDocument: (
   //   companyId: number,
@@ -538,34 +542,50 @@ export const adminAPI = {
   // getCompanies: (params?: Record<string, unknown>) =>
   //   axios.get("/admin/companies", { params }),
   getSystemHealth: () => api.get("/admin/system-health"),
+
   getCompany: (id: number) => axios.get(`/admin/companies/${id}`),
+
   createCategory: (data: { name: string; parentId?: number | null }) =>
     api.post("/admin/categories", data),
+
   deleteCategory: (id: number) => api.delete(`/admin/categories/${id}`),
+
   updateCategory(id: number, data: { name: string; slug?: string }) {
     return api.put(`/categories/${id}`, data);
   },
+
   cancelBulkTask: (taskId: number) =>
     api.delete(`/admin/scheduled-tasks/${taskId}`),
+
   getCompanyVerificationHistory: (companyId: number) =>
     api.get(`/admin/companies/${companyId}/verification-history`),
+
   getScheduledTasks: (params?: Record<string, unknown>) =>
     api.get("/admin/scheduled-tasks", { params }),
+
   pauseScheduledTask: (taskId: number) =>
     api.post(`/admin/scheduled-tasks/${taskId}/pause`),
+
   resumeScheduledTask: (taskId: number) =>
     api.post(`/admin/scheduled-tasks/${taskId}/resume`),
+
   getScheduledTaskById: (id: number) => api.get(`/admin/scheduled-tasks/${id}`),
+
   cancelScheduledTask: (id: number) =>
     api.post(`/admin/scheduled-tasks/${id}/cancel`),
+
   getScheduledTaskTypes: () => api.get("/admin/scheduled-tasks/types"),
+
   getRecurringTasks: (params?: Record<string, unknown>) =>
     api.get("/admin/recurring-tasks", { params }),
+
   cancelRecurringTask: (id: number) =>
     api.post(`/admin/recurring-tasks/${id}/cancel`),
+
   getCompanyListings: (companyId: number) => {
     return api.get(`/admin/companies/${companyId}/listings`);
   },
+
   getCompanyDocuments: (companyId: number) => {
     return api.get(`/admin/companies/${companyId}/documents`);
   },
@@ -579,18 +599,23 @@ export const adminAPI = {
 
   // Removed duplicate definitions: verifyCompany, rejectCompany, verifyDocument, rejectDocument
   getUser: (userId: number) => api.get(`/admin/users/${userId}`),
+
   getUserCompanies: (userId: number) => {
     return api.get(`/admin/users/${userId}/companies`);
   },
+
   getUserListings: (userId: number, params?: Record<string, unknown>) => {
     return api.get(`/admin/users/${userId}/listings`, { params });
   },
+
   getUserTransactions: (userId: number, params?: Record<string, unknown>) => {
     return api.get(`/admin/users/${userId}/transactions`, { params });
   },
+
   getUserNotifications: (userId: number, params?: Record<string, unknown>) => {
     return api.get(`/admin/users/${userId}/notifications`, { params });
   },
+
   getUserMessages: (userId: number, params?: Record<string, unknown>) => {
     return api.get(`/admin/users/${userId}/messages`, { params });
   },
@@ -713,7 +738,6 @@ export const adminAPI = {
     api.post(`/admin/companies/${companyId}/reject`, data),
   verifyDocument: (companyId: number, documentId: number) =>
     api.post(`/admin/companies/${companyId}/documents/${documentId}/verify`),
-  
 };
 
 // API для запланованих завдань
