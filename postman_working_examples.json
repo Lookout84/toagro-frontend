@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "ToAgro API - Working Examples (Based on Success)",
+    "description": "Робочі приклади запитів базовані на успішному тестуванні",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Listing - John Deere 6150R (Working)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Продам трактор John Deere 6150R\",\n  \"description\": \"Трактор в ідеальному стані, 2019 року випуску. Пробіг 1200 мотогодин. Повний комплект документів. Регулярне технічне обслуговування. Причина продажу - покупка більшого трактора.\",\n  \"price\": 1500000,\n  \"currency\": \"UAH\",\n  \"priceType\": \"NETTO\",\n  \"condition\": \"used\",\n  \"category\": \"Трактори\",\n  \"categoryId\": 1,\n  \"userGeolocation\": {\n    \"latitude\": \"50.4501\",\n    \"longitude\": \"30.5234\",\n    \"accuracy\": 20,\n    \"timestamp\": \"2025-01-23T10:30:00Z\"\n  },\n  \"mapLocation\": {\n    \"lat\": \"49.2331\",\n    \"lon\": \"28.4682\",\n    \"name\": \"Вінниця\",\n    \"display_name\": \"Вінниця, Вінницька область, Україна\",\n    \"place_id\": 123456,\n    \"osm_id\": 789012,\n    \"osm_type\": \"relation\",\n    \"address\": {\n      \"city\": \"Вінниця\",\n      \"state\": \"Вінницька область\",\n      \"country\": \"Україна\",\n      \"postcode\": \"21000\",\n      \"county\": \"Вінницький район\"\n    },\n    \"boundingbox\": [\"49.2031\", \"49.2631\", \"28.4282\", \"28.5082\"]\n  },\n  \"location\": {\n    \"countryId\": 1,\n    \"region\": \"Вінницька область\",\n    \"district\": \"Вінницький район\",\n    \"settlement\": \"Вінниця\"\n  },\n  \"motorizedSpec\": {\n    \"model\": \"6150R\",\n    \"year\": 2019,\n    \"enginePower\": 150,\n    \"workingHours\": 1200,\n    \"fuelType\": \"diesel\",\n    \"transmission\": \"powershift\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "**УСПІШНИЙ ЗАПИТ** - базується на робочому прикладі\n\n**Особливості:**\n- ✅ JSON формат (не FormData)\n- ✅ Числові значення як numbers\n- ✅ condition: \"used\" (lowercase)\n- ✅ Детальна геолокація з userGeolocation та mapLocation\n- ✅ model присутній в motorizedSpec\n\n**УВАГА:** fuelType та transmission у lowercase - якщо backend очікує UPPERCASE, змініть на:\n- \"fuelType\": \"DIESEL\"\n- \"transmission\": \"POWERSHIFT\" або \"MANUAL\""
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - MTZ (JSON Format)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Трактор МТЗ-82.1 Беларус\",\n  \"description\": \"Трактор у відмінному стані, проведено капітальний ремонт двигуна. Всі агрегати працюють справно. Документи в порядку. Встановлено нову гідравліку, замінено зчеплення.\",\n  \"price\": 450000,\n  \"currency\": \"UAH\",\n  \"priceType\": \"NETTO\",\n  \"condition\": \"used\",\n  \"category\": \"Трактори\",\n  \"categoryId\": 1,\n  \"userGeolocation\": {\n    \"latitude\": \"49.460019\",\n    \"longitude\": \"25.614746\",\n    \"accuracy\": 15,\n    \"timestamp\": \"2025-01-23T10:30:00Z\"\n  },\n  \"mapLocation\": {\n    \"lat\": \"49.460019\",\n    \"lon\": \"25.614746\",\n    \"name\": \"Почаїв\",\n    \"display_name\": \"Почаїв, Кременецький район, Тернопільська область, Україна\",\n    \"address\": {\n      \"city\": \"Почаїв\",\n      \"county\": \"Кременецький район\",\n      \"state\": \"Тернопільська область\",\n      \"country\": \"Україна\"\n    }\n  },\n  \"location\": {\n    \"countryId\": 1,\n    \"region\": \"Тернопільська область\",\n    \"district\": \"Кременецький район\",\n    \"settlement\": \"Почаїв\"\n  },\n  \"motorizedSpec\": {\n    \"model\": \"МТЗ-82.1\",\n    \"year\": 2018,\n    \"enginePower\": 82,\n    \"enginePowerKw\": 60,\n    \"workingHours\": 3500,\n    \"fuelType\": \"diesel\",\n    \"transmission\": \"manual\",\n    \"fuelCapacity\": 130\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "Приклад на базі вашого успішного формату для МТЗ трактора"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - FormData Version",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Продам трактор John Deere 6150R",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Трактор в ідеальному стані, 2019 року випуску. Пробіг 1200 мотогодин. Повний комплект документів. Регулярне технічне обслуговування. Причина продажу - покупка більшого трактора.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "1500000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Трактори",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"region\":\"Вінницька область\",\"district\":\"Вінницький район\",\"settlement\":\"Вінниця\"}",
+              "type": "text"
+            },
+            {
+              "key": "userGeolocation",
+              "value": "{\"latitude\":\"50.4501\",\"longitude\":\"30.5234\",\"accuracy\":20,\"timestamp\":\"2025-01-23T10:30:00Z\"}",
+              "type": "text"
+            },
+            {
+              "key": "mapLocation",
+              "value": "{\"lat\":\"49.2331\",\"lon\":\"28.4682\",\"name\":\"Вінниця\",\"display_name\":\"Вінниця, Вінницька область, Україна\"}",
+              "type": "text"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"model\":\"6150R\",\"year\":2019,\"enginePower\":150,\"workingHours\":1200,\"fuelType\":\"diesel\",\"transmission\":\"powershift\"}",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "FormData версія того ж запиту для завантаження файлів"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - Enum Test (UPPERCASE)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Тест enum значень - Трактор Case IH\",\n  \"description\": \"Тестовий запит для перевірки enum значень у ВЕРХНЬОМУ РЕГІСТРІ відповідно до backend Zod схеми. Трактор у відмінному стані.\",\n  \"price\": 850000,\n  \"currency\": \"UAH\",\n  \"priceType\": \"NETTO\",\n  \"condition\": \"used\",\n  \"category\": \"Трактори\",\n  \"categoryId\": 1,\n  \"userGeolocation\": {\n    \"latitude\": \"50.4501\",\n    \"longitude\": \"30.5234\",\n    \"accuracy\": 20,\n    \"timestamp\": \"2025-01-23T10:30:00Z\"\n  },\n  \"mapLocation\": {\n    \"lat\": \"50.4501\",\n    \"lon\": \"30.5234\",\n    \"name\": \"Київ\",\n    \"display_name\": \"Київ, Україна\",\n    \"address\": {\n      \"city\": \"Київ\",\n      \"country\": \"Україна\"\n    }\n  },\n  \"location\": {\n    \"countryId\": 1,\n    \"region\": \"Київська область\",\n    \"settlement\": \"Київ\"\n  },\n  \"motorizedSpec\": {\n    \"model\": \"Maxxum 125\",\n    \"year\": 2020,\n    \"enginePower\": 125,\n    \"workingHours\": 800,\n    \"fuelType\": \"DIESEL\",\n    \"transmission\": \"MANUAL\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "**ТЕСТ ENUM У ВЕРХНЬОМУ РЕГІСТРІ:**\n\n🔧 **Transmission options:**\n- MANUAL ✅\n- AUTOMATIC ✅\n- HYDROSTATIC ✅\n- CVT ✅\n\n⛽ **FuelType options:**\n- DIESEL ✅\n- GASOLINE ✅\n- ELECTRIC ✅\n- HYBRID ✅\n- GAS ✅\n\n📝 **Condition options:**\n- new ✅\n- used ✅"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - No Motor Specs",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Плуг оборотний ПОН-3-35\",\n  \"description\": \"Плуг оборотний у хорошому стані. Всі лемеші та відвали справні. Готовий до роботи на полі. Без моторизованих характеристик.\",\n  \"price\": 45000,\n  \"currency\": \"UAH\",\n  \"priceType\": \"NETTO\",\n  \"condition\": \"used\",\n  \"category\": \"Обробіток ґрунту\",\n  \"categoryId\": 2,\n  \"userGeolocation\": {\n    \"latitude\": \"49.5882\",\n    \"longitude\": \"34.5514\",\n    \"accuracy\": 25,\n    \"timestamp\": \"2025-01-23T10:30:00Z\"\n  },\n  \"mapLocation\": {\n    \"lat\": \"49.5882\",\n    \"lon\": \"34.5514\",\n    \"name\": \"Полтава\",\n    \"display_name\": \"Полтава, Полтавська область, Україна\",\n    \"address\": {\n      \"city\": \"Полтава\",\n      \"state\": \"Полтавська область\",\n      \"country\": \"Україна\"\n    }\n  },\n  \"location\": {\n    \"countryId\": 1,\n    \"region\": \"Полтавська область\",\n    \"settlement\": \"Полтава\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "Приклад для немоторизованої техніки без motorizedSpec"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "description": "Base URL вашого API сервера"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "description": "JWT токен для авторизації"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ export interface MotorizedSpecForm {
   engineModel: string | null;
   fuelType: "DIESEL" | "GASOLINE" | "ELECTRIC" | "HYBRID" | "GAS" | null;
   fuelCapacity: string | null;
-  transmission: string | null;
+  transmission: "MANUAL" | "AUTOMATIC" | "HYDROSTATIC" | "CVT" | null;
   numberOfGears: string | null;
   length: string | null;
   width: string | null;
@@ -49,7 +49,7 @@ export const initialMotorizedSpec: MotorizedSpecForm = {
   engineModel: "",
   fuelType: null,
   fuelCapacity: "",
-  transmission: "",
+  transmission: null,
   numberOfGears: "",
   length: "",
   width: "",
@@ -122,14 +122,16 @@ const MotorizedSpecFormComponent: React.FC<MotorizedSpecFormProps> = ({
           {/* Основні характеристики */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Модель
+              Модель *
             </label>
             <input
               type="text"
               name="model"
               value={motorizedSpec.model ?? ""}
               onChange={onChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md"
+              placeholder="Наприклад: МТЗ-82.1, John Deere 6155M"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+              required
             />
           </div>
           <div>
@@ -240,13 +242,18 @@ const MotorizedSpecFormComponent: React.FC<MotorizedSpecFormProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Тип трансмісії
             </label>
-            <input
-              type="text"
+            <select
               name="transmission"
               value={motorizedSpec.transmission ?? ""}
               onChange={onChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-md"
-            />
+            >
+              <option value="">Оберіть тип трансмісії</option>
+              <option value="MANUAL">Механічна</option>
+              <option value="AUTOMATIC">Автоматична</option>
+              <option value="HYDROSTATIC">Гідростатична</option>
+              <option value="CVT">CVT (безступінчаста)</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -1,0 +1,458 @@
+{
+  "info": {
+    "name": "ToAgro API - Create Listing v3 (Backend Fixed)",
+    "description": "Виправлена колекція з урахуванням backend вимог",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Listing - MTZ Tractor (Fixed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Трактор МТЗ-82.1 Беларус",
+              "type": "text",
+              "description": "Назва оголошення (обов'язково)"
+            },
+            {
+              "key": "description",
+              "value": "Трактор у відмінному стані, проведено капітальний ремонт двигуна. Всі агрегати працюють справно. Документи в порядку. Встановлено нову гідравліку, замінено зчеплення. Технічне обслуговування проводиться регулярно.",
+              "type": "text",
+              "description": "Опис оголошення (мінімум 50 символів)"
+            },
+            {
+              "key": "price",
+              "value": "450000",
+              "type": "text",
+              "description": "Ціна (тільки цифри)"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text",
+              "description": "Валюта"
+            },
+            {
+              "key": "category",
+              "value": "Трактори",
+              "type": "text",
+              "description": "Назва категорії"
+            },
+            {
+              "key": "categoryId",
+              "value": "1",
+              "type": "text",
+              "description": "ID категорії"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text",
+              "description": "Стан техніки (lowercase): new або used"
+            },
+            {
+              "key": "brandId",
+              "value": "351",
+              "type": "text",
+              "description": "ID бренду МТЗ"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Почаїв\",\"regionId\":22,\"latitude\":49.460019,\"longitude\":25.614746}",
+              "type": "text",
+              "description": "JSON об'єкт з локацією (settlement мін. 2 символи)"
+            },
+            {
+              "key": "latitude",
+              "value": "49.460019",
+              "type": "text",
+              "description": "Широта (окремо для сумісності)"
+            },
+            {
+              "key": "longitude",
+              "value": "25.614746",
+              "type": "text",
+              "description": "Довгота (окремо для сумісності)"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text",
+              "description": "ID країни (окремо для сумісності)"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text",
+              "description": "Тип ціни"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text",
+              "description": "Чи включений ПДВ"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"model\":\"МТЗ-82.1\",\"year\":\"2018\",\"enginePower\":\"82\",\"enginePowerKw\":\"60\",\"fuelType\":\"DIESEL\",\"fuelCapacity\":\"130\",\"transmission\":\"MANUAL\",\"engineHours\":\"3500\",\"threePtHitch\":true,\"pto\":true,\"isOperational\":true}",
+              "type": "text",
+              "description": "JSON з технічними характеристиками (model обов'язковий!)"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": [],
+              "description": "Зображення техніки"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "**ВИПРАВЛЕННЯ:**\n\n1. ✅ **model** додано в motorizedSpec (обов'язковий!)\n2. ✅ **transmission** у ВЕРХНЬОМУ РЕГІСТРІ: MANUAL\n3. ✅ **fuelType** у ВЕРХНЬОМУ РЕГІСТРІ: DIESEL\n4. ✅ **settlement** мін. 2 символи: \"Почаїв\"\n5. ✅ **condition** у нижньому регістрі: \"used\"\n\n**Backend вимоги:**\n- motorizedSpec.model: String (обов'язково)\n- transmission: MANUAL|AUTOMATIC|HYDROSTATIC|CVT\n- fuelType: DIESEL|GASOLINE|ELECTRIC|HYBRID|GAS"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - John Deere Combine",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Комбайн John Deere S670",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Потужний зернозбиральний комбайн John Deere S670 з CVT трансмісією. Обладнаний системою автопілот та GPS навігацією. Проведено повне технічне обслуговування. Готовий до сезону збирання врожаю.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "2500000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Комбайни",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "3",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text"
+            },
+            {
+              "key": "brandId",
+              "value": "15",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Дніпро\",\"regionId\":3,\"latitude\":48.4647,\"longitude\":35.0462}",
+              "type": "text"
+            },
+            {
+              "key": "latitude",
+              "value": "48.4647",
+              "type": "text"
+            },
+            {
+              "key": "longitude",
+              "value": "35.0462",
+              "type": "text"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "BRUTTO",
+              "type": "text"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"model\":\"S670\",\"year\":\"2020\",\"enginePower\":\"340\",\"enginePowerKw\":\"253\",\"engineModel\":\"6068HLV93\",\"fuelType\":\"DIESEL\",\"fuelCapacity\":\"757\",\"transmission\":\"CVT\",\"engineHours\":\"1200\",\"grainTankCapacity\":\"14100\",\"headerWidth\":\"7.6\",\"threePtHitch\":false,\"pto\":false,\"isOperational\":true}",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - All Transmissions Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Тест всіх типів трансмісії",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Тестове оголошення для перевірки всіх типів трансмісії. Цей запит можна змінювати для тестування різних enum значень.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "100000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Трактори",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "new",
+              "type": "text"
+            },
+            {
+              "key": "brandId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Київ\",\"latitude\":50.4501,\"longitude\":30.5234}",
+              "type": "text"
+            },
+            {
+              "key": "latitude",
+              "value": "50.4501",
+              "type": "text"
+            },
+            {
+              "key": "longitude",
+              "value": "30.5234",
+              "type": "text"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"model\":\"Тест-Модель\",\"transmission\":\"HYDROSTATIC\",\"fuelType\":\"ELECTRIC\",\"isOperational\":true}",
+              "type": "text",
+              "description": "Змініть transmission на: MANUAL, AUTOMATIC, HYDROSTATIC, або CVT"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "**ТЕСТУВАННЯ ENUM ЗНАЧЕНЬ:**\n\n**Transmission (змініть у motorizedSpec):**\n- MANUAL ✅\n- AUTOMATIC ✅  \n- HYDROSTATIC ✅\n- CVT ✅\n\n**FuelType (змініть у motorizedSpec):**\n- DIESEL ✅\n- GASOLINE ✅\n- ELECTRIC ✅\n- HYBRID ✅\n- GAS ✅\n\n**Condition (змініть основне поле):**\n- new ✅\n- used ✅"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing - Minimal (No Motor Specs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Плуг оборотний ПОН-3-35",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Плуг оборотний у хорошому стані. Всі лемеші та відвали справні. Готовий до роботи на полі.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "45000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Обробіток ґрунту",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "2",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text"
+            },
+            {
+              "key": "brandId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Полтава\",\"latitude\":49.5882,\"longitude\":34.5514}",
+              "type": "text"
+            },
+            {
+              "key": "latitude",
+              "value": "49.5882",
+              "type": "text"
+            },
+            {
+              "key": "longitude",
+              "value": "34.5514",
+              "type": "text"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "listings"]
+        },
+        "description": "Мінімальний приклад без motorizedSpec для немоторизованої техніки"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "description": "Base URL вашого API сервера"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "description": "JWT токен для авторизації"
+    }
+  ]
+}

@@ -13,6 +13,15 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({ value, onChange, error })
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Debug логування
+  console.log("🚗 BrandSelector render:", {
+    brandsCount: brands.length,
+    brandsStatus,
+    brands: brands.slice(0, 3), // Показуємо тільки перші 3 для читабельності
+    value,
+    searchQuery
+  });
+
   const handleBrandSelect = (brandId: string, brandName: string) => {
     onChange(brandId, brandName);
     setSearchQuery(brandName);
@@ -57,8 +66,13 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({ value, onChange, error })
         {isDropdownOpen && (
           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
             {brandsStatus === "loading" ? (
-              <div className="px-4 py-2 text-sm text-gray-500">
+              <div className="px-4 py-2 text-sm text-gray-500 flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
                 Завантаження марок...
+              </div>
+            ) : brandsStatus === "failed" ? (
+              <div className="px-4 py-2 text-sm text-red-500">
+                Помилка завантаження марок. Спробуйте оновити сторінку.
               </div>
             ) : Array.isArray(brands) && brands.length > 0 ? (
               <ul className="py-1">
@@ -102,7 +116,10 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({ value, onChange, error })
               </ul>
             ) : (
               <div className="px-4 py-2 text-sm text-gray-500">
-                Немає доступних марок
+                <div>Немає доступних марок</div>
+                <div className="text-xs mt-1">
+                  Статус: {brandsStatus}, Кількість: {brands.length}
+                </div>
               </div>
             )}
           </div>

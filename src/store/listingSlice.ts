@@ -163,7 +163,13 @@ export const createListing = createAsyncThunk(
       console.error("Create listing API error:", error);
       
       if (error.response) {
-        console.error("Response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+        console.error("Error response headers:", error.response.headers);
+        console.error("Error response data:", error.response.data);
+        
+        // Логуємо весь об'єкт помилки
+        console.error("Full error response object:", JSON.stringify(error.response.data, null, 2));
+        
         return rejectWithValue({
           status: error.response.status,
           data: error.response.data,

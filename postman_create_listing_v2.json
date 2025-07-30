@@ -1,0 +1,364 @@
+{
+  "info": {
+    "name": "Create Listing - Fixed Validation v2",
+    "description": "Запит для створення оголошення з виправленою валідацією відповідно до backend Zod схеми",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Listing (Fixed Validation)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text",
+            "description": "JWT токен авторизації"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Трактор John Deere 6155M, 2020 рік",
+              "type": "text",
+              "description": "Назва оголошення (обов'язково)"
+            },
+            {
+              "key": "description",
+              "value": "Високоякісний трактор John Deere 6155M 2020 року випуску. Потужність двигуна 155 к.с. Повний привід, кабіна з кондиціонером, GPS навігація. Працював тільки на полевих роботах, технічне обслуговування проводилося вчасно в офіційного дилера. Комплектація: передній навісний механізм, ВВП передній та задній, гідравлічна система високого тиску. Машина в ідеальному стані, без пошкоджень та ремонтів.",
+              "type": "text",
+              "description": "Опис оголошення (мінімум 50 символів)"
+            },
+            {
+              "key": "price",
+              "value": "2500000",
+              "type": "text",
+              "description": "Ціна (тільки цифри, без пробілів)"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text",
+              "description": "Валюта"
+            },
+            {
+              "key": "category",
+              "value": "Трактори",
+              "type": "text",
+              "description": "Назва категорії"
+            },
+            {
+              "key": "categoryId",
+              "value": "1",
+              "type": "text",
+              "description": "ID категорії (number)"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text",
+              "description": "Стан техніки (lowercase): 'new' або 'used'"
+            },
+            {
+              "key": "brandId",
+              "value": "15",
+              "type": "text",
+              "description": "ID бренду (number)"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Київ\",\"regionId\":1,\"communityId\":1,\"latitude\":50.4501,\"longitude\":30.5234}",
+              "type": "text",
+              "description": "JSON об'єкт з даними локації (settlement мін. 2 символи)"
+            },
+            {
+              "key": "latitude",
+              "value": "50.4501",
+              "type": "text",
+              "description": "Широта (окремо для сумісності)"
+            },
+            {
+              "key": "longitude",
+              "value": "30.5234",
+              "type": "text",
+              "description": "Довгота (окремо для сумісності)"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text",
+              "description": "ID країни (окремо для сумісності)"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text",
+              "description": "Тип ціни"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text",
+              "description": "Чи включений ПДВ"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"year\":2020,\"enginePower\":155,\"workingHours\":1250,\"transmission\":\"AUTOMATIC\",\"fuelType\":\"DIESEL\",\"weight\":8500}",
+              "type": "text",
+              "description": "JSON з характеристиками моторизованої техніки (transmission і fuelType у ВЕРХНЬОМУ РЕГІСТРІ)"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/image1.jpg",
+              "description": "Зображення 1 (файл)"
+            },
+            {
+              "key": "images",
+              "type": "file", 
+              "src": "/path/to/image2.jpg",
+              "description": "Зображення 2 (файл) - можна додати декілька"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["listings"]
+        },
+        "description": "Створення нового оголошення з виправленою валідацією\n\n**ВАЖЛИВІ ЗМІНИ:**\n\n1. **Transmission enum** - тепер у ВЕРХНЬОМУ РЕГІСТРІ:\n   - ✅ 'MANUAL', 'AUTOMATIC', 'HYDROSTATIC', 'CVT'\n   - ❌ 'manual', 'automatic', 'hydrostatic', 'cvt'\n\n2. **FuelType enum** - тепер у ВЕРХНЬОМУ РЕГІСТРІ:\n   - ✅ 'DIESEL', 'GASOLINE', 'ELECTRIC', 'HYBRID', 'GAS'\n   - ❌ 'diesel', 'gasoline', 'electric', 'hybrid', 'gas'\n\n3. **Settlement validation** - мінімум 2 символи:\n   - ✅ \"Київ\", \"Львів\", \"Одеса\"\n   - ❌ \"К\", \"\", null\n\n4. **Condition** - у нижньому регістрі:\n   - ✅ 'new', 'used'\n   - ❌ 'NEW', 'USED'\n\n5. **Location object** - structured JSON з усіма обов'язковими полями\n\n6. **Images** - файли через form-data"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing (Minimal Example)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Мінітрактор Kubota B2150",
+              "type": "text"
+            },
+            {
+              "key": "description", 
+              "value": "Надійний мінітрактор Kubota B2150 у відмінному стані. Двигун працює ідеально, всі системи функціонують без нарікань. Ідеально підходить для невеликих господарств та дачних ділянок.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "450000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Трактори",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text"
+            },
+            {
+              "key": "brandId",
+              "value": "25",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Полтава\",\"latitude\":49.5935,\"longitude\":34.5407}",
+              "type": "text"
+            },
+            {
+              "key": "latitude",
+              "value": "49.5935",
+              "type": "text"
+            },
+            {
+              "key": "longitude",
+              "value": "34.5407",
+              "type": "text"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/tractor.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["listings"]
+        },
+        "description": "Мінімальний приклад створення оголошення тільки з обов'язковими полями"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Listing (With All Motor Specs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Комбайн CLAAS LEXION 770",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Потужний зернозбиральний комбайн CLAAS LEXION 770. Відмінний стан, регулярне обслуговування, всі системи працюють ідеально. Високопродуктивна машина для великих господарств. Комплектується різними жатками.",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "8500000",
+              "type": "text"
+            },
+            {
+              "key": "currency",
+              "value": "UAH",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Комбайни",
+              "type": "text"
+            },
+            {
+              "key": "categoryId",
+              "value": "3",
+              "type": "text"
+            },
+            {
+              "key": "condition",
+              "value": "used",
+              "type": "text"
+            },
+            {
+              "key": "brandId",
+              "value": "8",
+              "type": "text"
+            },
+            {
+              "key": "location",
+              "value": "{\"countryId\":1,\"settlement\":\"Дніпро\",\"regionId\":3,\"latitude\":48.4647,\"longitude\":35.0462}",
+              "type": "text"
+            },
+            {
+              "key": "latitude",
+              "value": "48.4647",
+              "type": "text"
+            },
+            {
+              "key": "longitude",
+              "value": "35.0462",
+              "type": "text"
+            },
+            {
+              "key": "countryId",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "priceType",
+              "value": "NETTO",
+              "type": "text"
+            },
+            {
+              "key": "vatIncluded",
+              "value": "false",
+              "type": "text"
+            },
+            {
+              "key": "motorizedSpec",
+              "value": "{\"year\":2019,\"enginePower\":435,\"workingHours\":2100,\"transmission\":\"HYDROSTATIC\",\"fuelType\":\"DIESEL\",\"weight\":18500,\"fuelTankCapacity\":1100,\"operatingWidth\":10.8}",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/combine1.jpg"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/combine2.jpg"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": "/path/to/combine3.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/listings",
+          "host": ["{{baseUrl}}"],
+          "path": ["listings"]
+        },
+        "description": "Приклад з повними технічними характеристиками моторизованої техніки"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "description": "Base URL для API"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "description": "JWT токен для авторизації"
+    }
+  ]
+}

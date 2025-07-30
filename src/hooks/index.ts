@@ -3,6 +3,7 @@ import useCompare from "./useCompare";
 import useDebounce from "./useDebounce";
 import useForm from "./useForm";
 import useLocalStorage from "./useLocalStorage";
+import { useLocationSearch } from "./useLocationSearch";
 import useMediaQuery from "./useMediaQuery";
 import useOutsideClick from "./useOutsideClick";
 import usePagination from "./usePagination";
@@ -15,6 +16,7 @@ export {
   useDebounce,
   useForm,
   useLocalStorage,
+  useLocationSearch,
   useMediaQuery,
   useOutsideClick,
   usePagination,
