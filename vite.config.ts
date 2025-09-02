@@ -68,6 +68,11 @@ export default defineConfig(({ mode }) => {
         "@routes": resolve(__dirname, "./src/routes"),
       },
     },
+    define: {
+      // Виправляємо проблему з process.env в браузері
+      global: 'globalThis',
+      'process.env': env,
+    },
     server: {
       port: parseInt(env.VITE_SERVER_PORT || "3000"),
       open: true,

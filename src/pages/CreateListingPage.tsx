@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchCategories } from "../store/catalogSlice";
 import { fetchBrands } from "../store/brandSlice";
-import { createListing } from "../store/listingSlice";
 import { fetchRegions, fetchCommunities } from "../store/locationSlice";
 import { countriesAPI } from "../api/apiClient";
 import { useGeolocation, useReverseGeocode } from "../hooks/useGeolocation";
-import { handleApiError } from "../utils/errorHandler";
 import { processGeocodeAddress } from "../utils/geocodeUtils";
 import MotorizedSpecFormComponent, {
   initialMotorizedSpec,
@@ -887,7 +885,7 @@ const CreateListingPage = () => {
       console.log("📤 Початок створення оголошення");
       console.log("📊 Дані форми:", formData);
       
-      // Детальна перевірка критичних полів відповідно до backend schema
+      // Детальна перевірка критичних полів відповідно до успішного запиту
       console.log("🔍 ДЕТАЛЬНА ВАЛІДАЦІЯ ДАНИХ:");
       
       if (!formData.title?.trim()) {
@@ -941,14 +939,14 @@ const CreateListingPage = () => {
       }
       console.log("✅ Category name OK:", formData.categoryName);
       
-      // Backend schema потребує settlement мін. 2 символи
+      // Backend потребує settlement мін. 2 символи
       if (!formData.locationName?.trim()) {
         alert("Вкажіть населений пункт");
         return;
       }
       
       if (formData.locationName.trim().length < 2) {
-        alert("Населений пункт повинен містити мінімум 2 символи (backend вимога)");
+        alert("Населений пункт повинен містити мінімум 2 символи");
         return;
       }
       console.log("✅ Settlement OK:", `"${formData.locationName.trim()}" (${formData.locationName.trim().length} символів)`);
@@ -984,82 +982,80 @@ const CreateListingPage = () => {
       }
       console.log("✅ Condition OK:", conditionLower);
       
-      const formDataToSubmit = new FormData();
+      // ВАЖЛИВО: Backend приймає JSON формат (не FormData) відповідно до успішного запиту
+      console.log("📦 ФОРМУВАННЯ JSON PAYLOAD ВІДПОВІДНО ДО УСПІШНОГО ЗАПИТУ:");
 
-      // ВАЖЛИВО: Конвертуємо всі дані у відповідність до backend schema
-      console.log("📦 ФОРМУВАННЯ FORMDATA ВІДПОВІДНО ДО BACKEND SCHEMA:");
-
-      // Basic info - відправляємо точно як очікує backend
-      formDataToSubmit.append("title", formData.title.trim());
-      formDataToSubmit.append("description", formData.description.trim());
-      
-      // Ціна: backend очікує number, відправляємо як string (FormData автоматично конвертує)
-      const cleanPrice = formData.price.replace(/\s/g, '');
-      formDataToSubmit.append("price", cleanPrice);
-      console.log("💰 Price formatted:", cleanPrice);
-      
-      formDataToSubmit.append("currency", formData.currency);
-      formDataToSubmit.append("category", formData.categoryName.trim());
-      
-      // CategoryId: backend очікує number
-      formDataToSubmit.append("categoryId", formData.categoryId);
-      console.log("🏷️ CategoryId:", formData.categoryId, "type:", typeof formData.categoryId);
-
-      // Condition: backend очікує lowercase enum ['new', 'used']
-      const conditionValue = formData.condition.toLowerCase();
-      formDataToSubmit.append("condition", conditionValue);
-      console.log("� Condition:", conditionValue);
-      
-      // BrandId: backend очікує number
-      formDataToSubmit.append("brandId", formData.brandId);
-      console.log("🚗 BrandId:", formData.brandId, "type:", typeof formData.brandId);
-
-      // Location data - формуємо відповідно до locationInputSchema
-      const locationData = {
-        // countryId: backend очікує number, але опціонально
-        countryId: parseInt(formData.countryId),
-        // settlement: обов'язково, мін. 2 символи
-        settlement: formData.locationName.trim(),
-        // regionId: опціонально, якщо є
-        ...(formData.regionId && formData.regionId !== "" ? { regionId: parseInt(formData.regionId) } : {}),
-        // communityId: опціонально, якщо є
-        ...(formData.communityId && formData.communityId !== "" ? { communityId: parseInt(formData.communityId) } : {}),
-        // coordinates: backend очікує number
-        latitude: parseFloat(String(formData.latitude)),
-        longitude: parseFloat(String(formData.longitude))
+      // Основна інформація (як у успішному запиті)
+      const payload: Record<string, unknown> = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        price: numericPrice, // Як number, не string
+        currency: formData.currency,
+        priceType: formData.priceType,
+        condition: conditionLower, // "used" або "new"
+        category: formData.categoryName.trim(),
+        categoryId: numericCategoryId, // Як number
+        
+        // Геолокаційні дані (як у успішному запиті)
+        userGeolocation: {
+          latitude: String(formData.userLatitude || formData.latitude || 0),
+          longitude: String(formData.userLongitude || formData.longitude || 0),
+          accuracy: 20,
+          timestamp: new Date().toISOString()
+        },
+        
+        mapLocation: {
+          lat: String(formData.latitude || 0),
+          lon: String(formData.longitude || 0),
+          name: formData.locationName.trim(),
+          display_name: `${formData.locationName.trim()}, Україна`,
+          place_id: 123456,
+          osm_id: 789012,
+          osm_type: "relation",
+          address: {
+            city: formData.locationName.trim(),
+            state: regions.find(r => r.id === parseInt(formData.regionId || "0"))?.name || "Невідома область",
+            country: "Україна",
+            postcode: "00000",
+            county: "Невідомий район"
+          },
+          boundingbox: [
+            String(formData.latitude - 0.01),
+            String(formData.latitude + 0.01),
+            String(formData.longitude - 0.01),
+            String(formData.longitude + 0.01)
+          ]
+        },
+        
+        // Локація (як у успішному запиті)
+        location: {
+          countryId: numericCountryId,
+          settlement: formData.locationName.trim(),
+          ...(formData.regionId && formData.regionId !== "" ? { 
+            region: regions.find(r => r.id === parseInt(formData.regionId))?.name || "Невідома область" 
+          } : {}),
+          ...(formData.communityId && formData.communityId !== "" ? { 
+            district: "Невідомий район" 
+          } : {})
+        }
       };
-      
-      console.log("📍 Location data object:", JSON.stringify(locationData, null, 2));
-      console.log("🔍 Settlement length check:", locationData.settlement?.length || 0);
-      console.log("🔍 Settlement value:", `"${locationData.settlement}"`);
-      
-      // Валідуємо locationData перед відправкою
-      if (isNaN(locationData.countryId)) {
-        alert("Некоректний ID країни");
-        return;
-      }
-      if (!locationData.settlement || locationData.settlement.length < 2) {
-        alert(`Населений пункт повинен містити мінімум 2 символи. Поточне значення: "${locationData.settlement}" (довжина: ${locationData.settlement?.length || 0})`);
-        return;
-      }
-      if (isNaN(locationData.latitude) || isNaN(locationData.longitude)) {
-        alert("Некоректні координати");
-        return;
-      }
-      
-      formDataToSubmit.append("location", JSON.stringify(locationData));
 
-      // Координати також окремо (якщо backend їх очікує окремо)
-      formDataToSubmit.append("latitude", String(locationData.latitude));
-      formDataToSubmit.append("longitude", String(locationData.longitude));
+      // Додаємо brandId якщо є
+      if (formData.brandId) {
+        payload.brandId = numericBrandId;
+      }
+
+      // Додаємо vatIncluded
+      payload.vatIncluded = formData.vatIncluded;
       
-      // CountryId окремо (для сумісності)
-      formDataToSubmit.append("countryId", String(locationData.countryId));
+      console.log("� ВАЛЮТА ПЕРЕД ВІДПРАВКОЮ:");
+      console.log("  formData.currency:", formData.currency);
+      console.log("  payload.currency:", payload.currency);
+      console.log("  typeof currency:", typeof payload.currency);
+      
+      console.log("�📍 JSON Payload object:", JSON.stringify(payload, null, 2));
 
-      formDataToSubmit.append("priceType", formData.priceType);
-      formDataToSubmit.append("vatIncluded", String(formData.vatIncluded));
-
-      // Motorized specs
+      // Моторизовані характеристики (як у успішному запиті)
       if (isMotorized) {
         const hasFilledValues = Object.values(motorizedSpec).some(value => {
           if (value === null || value === undefined) return false;
@@ -1068,147 +1064,112 @@ const CreateListingPage = () => {
         });
 
         if (hasFilledValues) {
-          // ВАЖЛИВО: Конвертуємо enum значення у правильний формат для backend
-          const convertedMotorizedSpec = { ...motorizedSpec };
+          // ВАЖЛИВО: Конвертуємо дані відповідно до успішного запиту
+          const convertedMotorizedSpec: Record<string, unknown> = {};
           
           console.log("🔧 BEFORE conversion - motorizedSpec:", JSON.stringify(motorizedSpec, null, 2));
           
-          // Backend очікує transmission у ВЕРХНЬОМУ РЕГІСТРІ: 'MANUAL' | 'AUTOMATIC' | 'HYDROSTATIC' | 'CVT'
-          if (convertedMotorizedSpec.transmission && typeof convertedMotorizedSpec.transmission === 'string' && convertedMotorizedSpec.transmission.trim() !== "") {
-            const originalTransmission = convertedMotorizedSpec.transmission;
-            const upperTransmission = convertedMotorizedSpec.transmission.toUpperCase();
-            console.log("🔧 Transmission converted:", `"${originalTransmission}" → "${upperTransmission}"`);
-            
-            // Валідуємо що значення є валідним enum
-            const validTransmissions = ['MANUAL', 'AUTOMATIC', 'HYDROSTATIC', 'CVT'] as const;
-            if (!validTransmissions.includes(upperTransmission as any)) {
-              alert(`Некоректний тип трансмісії: "${originalTransmission}". Допустимі значення: ${validTransmissions.join(', ')}`);
-              return;
-            }
-            
-            convertedMotorizedSpec.transmission = upperTransmission as typeof convertedMotorizedSpec.transmission;
+          // Обов'язкове поле model
+          if (motorizedSpec.model && motorizedSpec.model.trim() !== "") {
+            convertedMotorizedSpec.model = motorizedSpec.model.trim();
+          } else {
+            alert("Поле 'Модель' є обов'язковим для моторизованої техніки");
+            return;
+          }
+
+          // Числові поля як numbers
+          if (motorizedSpec.year && motorizedSpec.year.trim() !== "") {
+            convertedMotorizedSpec.year = parseInt(motorizedSpec.year);
           }
           
-          // Backend очікує fuelType у ВЕРХНЬОМУ РЕГІСТРІ: 'DIESEL' | 'GASOLINE' | 'ELECTRIC' | 'HYBRID' | 'GAS'
-          if (convertedMotorizedSpec.fuelType && typeof convertedMotorizedSpec.fuelType === 'string') {
-            const originalFuelType = convertedMotorizedSpec.fuelType;
-            convertedMotorizedSpec.fuelType = convertedMotorizedSpec.fuelType.toUpperCase() as typeof convertedMotorizedSpec.fuelType;
-            console.log("🔧 FuelType converted:", `"${originalFuelType}" → "${convertedMotorizedSpec.fuelType}"`);
+          if (motorizedSpec.enginePower && motorizedSpec.enginePower.trim() !== "") {
+            convertedMotorizedSpec.enginePower = parseInt(motorizedSpec.enginePower);
+          }
+          
+          if (motorizedSpec.engineHours && motorizedSpec.engineHours.trim() !== "") {
+            convertedMotorizedSpec.workingHours = parseInt(motorizedSpec.engineHours);
+          }
+
+          // Enum поля у lowercase (як у успішному запиті)
+          if (motorizedSpec.fuelType && typeof motorizedSpec.fuelType === 'string') {
+            convertedMotorizedSpec.fuelType = motorizedSpec.fuelType.toLowerCase();
+            console.log("🔧 FuelType converted:", motorizedSpec.fuelType, "→", convertedMotorizedSpec.fuelType);
+          }
+          
+          if (motorizedSpec.transmission && typeof motorizedSpec.transmission === 'string') {
+            // Мапимо transmission значення
+            const transmissionMap: Record<string, string> = {
+              'MANUAL': 'manual',
+              'AUTOMATIC': 'automatic', 
+              'HYDROSTATIC': 'hydrostatic',
+              'CVT': 'cvt',
+              'manual': 'manual',
+              'automatic': 'automatic',
+              'hydrostatic': 'hydrostatic',
+              'cvt': 'cvt',
+              'powershift': 'powershift'
+            };
+            
+            convertedMotorizedSpec.transmission = transmissionMap[motorizedSpec.transmission] || motorizedSpec.transmission.toLowerCase();
+            console.log("� Transmission converted:", motorizedSpec.transmission, "→", convertedMotorizedSpec.transmission);
           }
           
           console.log("🔧 AFTER conversion - motorizedSpec:", JSON.stringify(convertedMotorizedSpec, null, 2));
           
-          formDataToSubmit.append("motorizedSpec", JSON.stringify(convertedMotorizedSpec));
+          payload.motorizedSpec = convertedMotorizedSpec;
         }
       }
 
-      // Images
-      formData.images.forEach((file, index) => {
-        formDataToSubmit.append("images", file);
-        console.log(`🖼️ Зображення ${index + 1}:`, file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      // Логуємо фінальний payload
+      console.log("� ФІНАЛЬНИЙ JSON PAYLOAD ДЛЯ ВІДПРАВКИ:");
+      console.log("📊 Структура:", Object.keys(payload));
+      console.log("📄 Повний JSON:", JSON.stringify(payload, null, 2));
+
+      console.log("🚀 ВІДПРАВЛЯЄМО JSON ЗАПИТ НА СТВОРЕННЯ ОГОЛОШЕННЯ...");
+      console.log("🌐 Backend endpoint: POST /listings");
+      console.log("📦 Content-Type: application/json");
+      
+      // Відправляємо JSON запит (не FormData)
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/listings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify(payload)
       });
 
-      // Логуємо всі дані, які відправляються
-      console.log("📋 ФІНАЛЬНИЙ FORMDATA ДЛЯ ВІДПРАВКИ:");
-      console.log("📊 Загальна кількість полів:", Array.from(formDataToSubmit.keys()).length);
-      
-      for (const [key, value] of formDataToSubmit.entries()) {
-        if (value instanceof File) {
-          console.log(`  📎 ${key}:`, `File(${value.name}, ${(value.size / 1024 / 1024).toFixed(2)}MB, ${value.type})`);
-        } else {
-          console.log(`  📝 ${key}:`, `"${value}" (length: ${String(value).length})`);
-        }
-      }
+      console.log("📨 РЕЗУЛЬТАТ ВІДПОВІДІ:", response.status, response.statusText);
 
-      console.log("� ВІДПРАВЛЯЄМО ЗАПИТ НА СТВОРЕННЯ ОГОЛОШЕННЯ...");
-      console.log("� Backend endpoint: POST /listings");
-      console.log("⚠️  УВАГА: За попереднім аналізом, backend route може не мати validation middleware!");
-      
-      const resultAction = await dispatch(createListing(formDataToSubmit));
-
-      console.log("📨 РЕЗУЛЬТАТ ВІДПОВІДІ:", resultAction);
-      console.log("📊 Type:", resultAction.type);
-      console.log("📊 Meta:", resultAction.meta);
-
-      if (createListing.fulfilled.match(resultAction)) {
-        console.log("✅ ОГОЛОШЕННЯ УСПІШНО СТВОРЕНО:", resultAction.payload);
-        navigate(`/listings/${resultAction.payload.id}`);
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ ОГОЛОШЕННЯ УСПІШНО СТВОРЕНО:", result);
+        console.log("💰 ПЕРЕВІРКА ВАЛЮТИ В РЕЗУЛЬТАТІ:");
+        console.log("  result.currency:", result.currency);
+        console.log("  result.price:", result.price);
+        navigate(`/listings/${result.id}`);
       } else {
+        const errorData = await response.json().catch(() => ({ message: 'Невідома помилка' }));
         console.error("❌ ПОМИЛКА СТВОРЕННЯ ОГОЛОШЕННЯ");
-        console.error("❌ Error object:", resultAction.error);
-        console.error("❌ Error payload:", resultAction.payload);
+        console.error("❌ Status:", response.status);
+        console.error("❌ Error data:", errorData);
         
-        // Детальний аналіз помилки
-        let detailedError = "Невідома помилка";
-        let statusCode: string | number = "невідомий";
-        let backendMessage = "";
+        let userMessage = `Не вдалося створити оголошення (${response.status})`;
         
-        if (resultAction.payload && typeof resultAction.payload === 'object') {
-          const payload = resultAction.payload as Record<string, unknown>;
-          
-          console.log("🔍 АНАЛІЗ PAYLOAD ПОМИЛКИ:");
-          console.log("  Status:", payload.status);
-          console.log("  Data:", payload.data);
-          console.log("  Message:", payload.message);
-          
-          statusCode = (payload.status as string | number) || "невідомий";
-          
-          if (payload.data) {
-            if (typeof payload.data === 'object') {
-              const data = payload.data as Record<string, unknown>;
-              console.log(payload.data);
-              backendMessage = (data.message as string) || JSON.stringify(payload.data);
-              
-              // Специфічна обробка для 400 Bad Request
-              if (payload.status === 400) {
-                console.error("🚨 400 BAD REQUEST - АНАЛІЗ:");
-                console.error("  Можливі причини:");
-                console.error("  1. Відсутній validation middleware на backend");
-                console.error("  2. Неправильний формат даних");
-                console.error("  3. Обов'язкові поля відсутні");
-                console.error("  4. Некоректні типи даних");
-                
-                if (data.errors) {
-                  console.error("  Validation errors:", data.errors);
-                  detailedError = `Помилки валідації: ${JSON.stringify(data.errors, null, 2)}`;
-                } else if (data.message) {
-                  detailedError = data.message as string;
-                } else {
-                  detailedError = `400 Bad Request: ${JSON.stringify(payload.data, null, 2)}`;
-                }
-              } else {
-                detailedError = backendMessage;
-              }
-            } else {
-              detailedError = String(payload.data);
-            }
-          } else if (payload.message) {
-            detailedError = payload.message as string;
-          }
-        }
-        
-        console.error("❌ ДЕТАЛЬНА ПОМИЛКА:", detailedError);
-        console.error("❌ STATUS CODE:", statusCode);
-        
-        const errorMessage = handleApiError(resultAction.error);
-        
-        // Покращене повідомлення про помилку для користувача
-        let userMessage = `Не вдалося створити оголошення (${statusCode})`;
-        
-        if (statusCode === 400) {
+        if (response.status === 400) {
           userMessage += "\n\n🚨 Можлива причина: проблема валідації даних на сервері";
-          userMessage += "\n💡 Спробуйте:";
-          userMessage += "\n  • Перевірити всі обов'язкові поля";
-          userMessage += "\n  • Вибрати населений пункт ще раз";
-          userMessage += "\n  • Перевірити координати на карті";
+          userMessage += "\n💡 Спробуйте перевірити всі обов'язкові поля";
         }
         
-        userMessage += `\n\nТехнічна інформація: ${errorMessage} - ${detailedError}`;
+        if (errorData.message) {
+          userMessage += `\n\nТехнічна інформація: ${errorData.message}`;
+        }
         
         alert(userMessage);
       }
     } catch (error) {
-      const errorMessage = handleApiError(error);
+      console.error("❌ КРИТИЧНА ПОМИЛКА:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Невідома помилка';
       alert(`Виникла помилка під час створення оголошення: ${errorMessage}`);
     } finally {
       setIsUploading(false);

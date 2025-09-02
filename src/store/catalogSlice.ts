@@ -175,6 +175,7 @@ export const fetchListings = createAsyncThunk(
   async (params: FilterParams, { rejectWithValue }) => {
     try {
       const response = await listingsAPI.getAll(params);
+      console.log("🔥 API Response for listings:", response.data);
       return response.data.data as ListingsResponse;
     } catch (error: unknown) {
       if (

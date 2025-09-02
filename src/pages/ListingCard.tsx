@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart, Scale, MapPin, Calendar } from "lucide-react";
 import { Listing } from "../store/catalogSlice";
 import { formatDate } from "../utils/formatters";
+import { formatCurrency } from "../utils/currencyFormatter";
 
 interface ListingCardProps {
   listing: Listing;
@@ -139,17 +140,15 @@ const formatLocation = (location: any) => {
                   typeof listing.price === "string"
                     ? parseFloat(listing.price)
                     : listing.price;
-                const formattedPrice = new Intl.NumberFormat("uk-UA").format(
-                  numericPrice
-                );
-                const normalizedCurrency = (listing.currency || "UAH")
-                  .toUpperCase()
-                  .trim();
-                let currencySymbol = "₴";
-                if (normalizedCurrency === "USD") currencySymbol = "$";
-                else if (normalizedCurrency === "EUR") currencySymbol = "€";
-                const result = `${formattedPrice} ${currencySymbol}`;
-                return result;
+                
+                console.log("💰 Форматування ціни для оголошення", listing.id, ":", numericPrice, "валюта:", listing.currency);
+                
+                const formattedPrice = formatCurrency(numericPrice, { 
+                  currency: listing.currency || "UAH" 
+                });
+                
+                console.log("📄 Результат formatCurrency:", formattedPrice);
+                return formattedPrice;
               })()
             : "Ціна не вказана"}
           <span className="ml-2 text-xs text-gray-500">
