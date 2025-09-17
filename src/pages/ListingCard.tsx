@@ -20,34 +20,52 @@ const ListingCard = ({
 }: ListingCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Форматування location
-  const renderLocation = (locationObj: any) => {
-  if (!locationObj) return "Місце не вказано";
-  if (typeof locationObj === "string") return locationObj;
-  const parts = [
-    locationObj.settlement ?? "",
-    locationObj.community?.name ?? "",
-    locationObj.region?.name ?? "",
-    locationObj.country?.name ?? "",
-  ]
-    .filter((part) => typeof part === "string" && part.trim().length > 0);
-  return parts.length ? parts.join(", ") : "Місце не вказано";
-};
+  // Форматування location відповідно до CreateListingPage
+  const renderLocation = (locationObj: unknown) => {
+    if (!locationObj) return "Місце не вказано";
+    
+    if (typeof locationObj === "string") return locationObj;
+    
+    // Обробка різних форматів локації відповідно до CreateListingPage
+    const parts = [];
+    
+    if (typeof locationObj === "object" && locationObj !== null) {
+      const location = locationObj as Record<string, unknown>;
+      
+      // Спочатку додаємо settlement/locationName
+      if (typeof location.settlement === "string") {
+        parts.push(location.settlement);
+      } else if (typeof location.locationName === "string") {
+        parts.push(location.locationName);
+      } else if (typeof location.name === "string") {
+        parts.push(location.name);
+      }
+      
+      // Потім регіон/область
+      if (location.region) {
+        if (typeof location.region === 'object' && location.region !== null && 
+            typeof (location.region as Record<string, unknown>).name === 'string') {
+          parts.push((location.region as Record<string, unknown>).name);
+        } else if (typeof location.region === 'string') {
+          parts.push(location.region);
+        }
+      }
+      
+      // Потім країну
+      if (location.country) {
+        if (typeof location.country === 'object' && location.country !== null && 
+            typeof (location.country as Record<string, unknown>).name === 'string') {
+          parts.push((location.country as Record<string, unknown>).name);
+        } else if (typeof location.country === 'string') {
+          parts.push(location.country);
+        }
+      }
+    }
+    
+    const result = parts.filter((part) => typeof part === "string" && part.trim().length > 0);
+    return result.length ? result.join(", ") : "Місце не вказано";
+  };
 
-const formatLocation = (location: any) => {
-  if (!location) return "Місцезнаходження не вказано";
-  
-  if (typeof location === "string") return location;
-  
-  const parts = [
-    location.settlement,
-    location.community?.name,
-    location.region?.name, 
-    location.country?.name
-  ].filter(Boolean);
-  
-  return parts.length > 0 ? parts.join(", ") : "Місцезнаходження не вказано";
-};
   // Обробник кліку на кнопку "В обране"
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -157,15 +175,28 @@ const formatLocation = (location: any) => {
               : listing.priceType === "NETTO"
               ? "(без ПДВ)"
               : ""}
+            {listing.vatIncluded !== undefined && (
+              <span className="ml-1">
+                {listing.vatIncluded ? "(ПДВ включено)" : "(ПДВ не включено)"}
+              </span>
+            )}
           </span>
         </p>
         <p className="text-gray-600 mb-3 text-sm line-clamp-2">
           {listing.description || "Опис відсутній"}
         </p>
+        {/* Відображення стану товару */}
+        {listing.condition && (
+          <div className="mb-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {listing.condition.toLowerCase() === "new" || listing.condition === "NEW" ? "Нова" : "Вживана"}
+            </span>
+          </div>
+        )}
         <div className="flex flex-col space-y-1 text-sm text-gray-500">
           <div className="flex items-center">
             <MapPin size={14} className="mr-1" />
-            <span>{formatLocation(renderLocation(listing.location))}</span>
+            <span>{renderLocation(listing.location)}</span>
           </div>
           <div className="flex items-center">
             <Calendar size={14} className="mr-1" />

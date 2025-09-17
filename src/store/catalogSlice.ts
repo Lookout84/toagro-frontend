@@ -23,8 +23,9 @@ export interface Listing {
   price: number;
   priceType?: "BRUTTO" | "NETTO" | string;
   currency: "UAH" | "USD" | "EUR"; // Додаємо поле валюти
+  vatIncluded?: boolean; // Додаємо поле vatIncluded
   location: string;
-  condition: "NEW" | "USED";
+  condition: "NEW" | "USED" | "new" | "used"; // Підтримуємо обидва формати
   category: string;
   categoryId?: number;
   images: string[];
@@ -33,7 +34,7 @@ export interface Listing {
   createdAt: string;
   updatedAt: string;
   user: {
-    phoneNumber: any;
+    phoneNumber: string | null;
     id: number;
     name: string;
     avatar?: string;

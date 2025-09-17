@@ -29,6 +29,8 @@ interface LocationState {
   communities: Community[];
   locations: Location[];
   status: "idle" | "loading" | "succeeded" | "failed";
+  regionsLoading: boolean;
+  communitiesLoading: boolean;
   error: string | null;
 }
 
@@ -37,6 +39,8 @@ const initialState: LocationState = {
   communities: [],
   locations: [],
   status: "idle",
+  regionsLoading: false,
+  communitiesLoading: false,
   error: null,
 };
 
@@ -48,9 +52,9 @@ export const fetchRegions = createAsyncThunk<Region[], number | string | undefin
       const response = await locationsAPI.getRegions(countryId);
       // Якщо API повертає { status, data }, то треба response.data.data
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       return rejectWithValue(
-        error.response?.data?.message || "Не вдалося завантажити області"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Не вдалося завантажити області"
       );
     }
   }
@@ -62,9 +66,9 @@ export const fetchCommunities = createAsyncThunk<Community[], number | string>(
     try {
       const response = await locationsAPI.getCommunities(regionId);
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       return rejectWithValue(
-        error.response?.data?.message || "Не вдалося завантажити громади"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Не вдалося завантажити громади"
       );
     }
   }
@@ -76,9 +80,9 @@ export const fetchLocations = createAsyncThunk<Location[], number | string>(
     try {
       const response = await locationsAPI.getLocations(communityId);
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       return rejectWithValue(
-        error.response?.data?.message || "Не вдалося завантажити населені пункти"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Не вдалося завантажити населені пункти"
       );
     }
   }
@@ -99,33 +103,33 @@ const locationSlice = createSlice({
     builder
       // Regions
       .addCase(fetchRegions.pending, (state) => {
-        state.status = "loading";
+        state.regionsLoading = true;
         state.error = null;
       })
       .addCase(fetchRegions.fulfilled, (state, action) => {
-        state.status = "succeeded";
+        state.regionsLoading = false;
         state.regions = action.payload;
         state.communities = [];
         state.locations = [];
       })
       .addCase(fetchRegions.rejected, (state, action) => {
-        state.status = "failed";
+        state.regionsLoading = false;
         state.error = action.payload as string;
       })
       // Communities
       .addCase(fetchCommunities.pending, (state) => {
-        state.status = "loading";
+        state.communitiesLoading = true;
         state.error = null;
         state.communities = [];
         state.locations = [];
       })
       .addCase(fetchCommunities.fulfilled, (state, action) => {
-        state.status = "succeeded";
+        state.communitiesLoading = false;
         state.communities = action.payload;
         state.locations = [];
       })
       .addCase(fetchCommunities.rejected, (state, action) => {
-        state.status = "failed";
+        state.communitiesLoading = false;
         state.error = action.payload as string;
         state.communities = [];
         state.locations = [];
