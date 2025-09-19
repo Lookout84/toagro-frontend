@@ -5,7 +5,8 @@
  * @returns {string|null} The authentication token or null if not found
  */
 export const getToken = (): string | null => {
-  return localStorage.getItem('auth_token');
+  // Prefer 'auth_token' but fall back to legacy 'token'
+  return localStorage.getItem('auth_token') || localStorage.getItem('token');
 };
 
 /**
@@ -13,7 +14,9 @@ export const getToken = (): string | null => {
  * @param {string} token - The authentication token to store
  */
 export const setToken = (token: string): void => {
+  // Write to both keys to keep compatibility across code paths
   localStorage.setItem('auth_token', token);
+  localStorage.setItem('token', token);
 };
 
 /**
@@ -21,6 +24,7 @@ export const setToken = (token: string): void => {
  */
 export const removeToken = (): void => {
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('token');
 };
 
 /**

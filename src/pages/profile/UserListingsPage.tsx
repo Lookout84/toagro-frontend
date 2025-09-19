@@ -270,7 +270,7 @@ const UserListingsPage: React.FC = () => {
                           Переглянути
                         </Button>
                       </Link>
-                      <Link to={`/listings/edit/${listing.id}`}>
+                      <Link to={`/profile/listings/edit/${listing.id}`}>
                         <Button
                           variant="outline"
                           size="small"

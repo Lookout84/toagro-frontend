@@ -13,8 +13,13 @@ export async function ensureFreshToken(): Promise<boolean> {
     // Викликаємо API для оновлення токену
     const response = await authAPI.refreshToken();
     
-    if (response.data && response.data.accessToken) {
-      setToken(response.data.accessToken);
+    const refreshedToken =
+      (response.data && (response.data.accessToken || response.data.token)) ||
+      (response.data?.data &&
+        (response.data.data.accessToken || response.data.data.token));
+
+    if (refreshedToken) {
+      setToken(refreshedToken);
       console.log("Токен успішно оновлено");
       return true;
     }

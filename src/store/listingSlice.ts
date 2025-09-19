@@ -25,30 +25,46 @@ export const fetchListingById = createAsyncThunk(
   "listing/fetchListingById",
   async (id: number, { rejectWithValue, dispatch }) => {
     try {
+      console.log("🔍 Fetching listing with ID:", id);
       const response = await listingsAPI.getById(id);
 
       // Додаємо логування для перевірки структури відповіді
-      console.log("API response for listing:", response);
+      console.log("📦 API response for listing:", response);
 
       let listing;
       // Перевіряємо структуру і використовуємо правильний шлях
-      if (response.data && response.data.data) {
+      if (response.data && response.data.data && response.data.data.listing) {
+        // API повертає { status, data: { listing: LISTING } }
+        listing = response.data.data.listing;
+        console.log("✅ Found listing in response.data.data.listing:", listing);
+      } else if (response.data && response.data.data) {
         // Якщо дані приходять у вигляді { status, data: LISTING }
         listing = response.data.data;
+        console.log("✅ Found listing in response.data.data:", listing);
       } else if (response.data && response.data.listing) {
         // Альтернативний шлях: { status, listing: LISTING }
         listing = response.data.listing;
+        console.log("✅ Found listing in response.data.listing:", listing);
       } else if (response.data) {
         // Дані приходять прямо в полі data
         listing = response.data;
+        console.log("✅ Found listing in response.data:", listing);
       } else {
         // Якщо структура зовсім інша
-        console.error("Unexpected API response structure:", response);
+        console.error("❌ Unexpected API response structure:", response);
         return rejectWithValue("Неочікувана структура відповіді API");
       }
 
+      if (!listing) {
+        console.error("❌ No listing found in response");
+        return rejectWithValue("Оголошення не знайдено");
+      }
+
+      console.log("🎯 Final listing object:", listing);
+
       // Якщо отримали оголошення і в ньому є userId, завантажуємо також інші оголошення цього користувача
       if (listing && listing.user && listing.user.id) {
+        console.log("👤 Fetching user listings for user:", listing.user.id);
         try {
           dispatch(
             fetchUserListings({
@@ -59,7 +75,7 @@ export const fetchListingById = createAsyncThunk(
           );
         } catch (userListingsError) {
           console.error(
-            "Не вдалося завантажити інші оголошення користувача:",
+            "⚠️ Не вдалося завантажити інші оголошення користувача:",
             userListingsError
           );
           // Продовжуємо виконання, навіть якщо не вдалося завантажити оголошення користувача
@@ -68,6 +84,7 @@ export const fetchListingById = createAsyncThunk(
 
       return listing;
     } catch (error: unknown) {
+      console.error("❌ Error fetching listing:", error);
       if (
         error &&
         typeof error === "object" &&
@@ -81,6 +98,7 @@ export const fetchListingById = createAsyncThunk(
           data && typeof data === "object" && "message" in data
             ? (data as { message?: string }).message
             : undefined;
+        console.error("❌ API error message:", message);
         return rejectWithValue(
           message || "Помилка завантаження оголошення"
         );

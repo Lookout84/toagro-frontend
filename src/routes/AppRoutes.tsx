@@ -14,6 +14,8 @@ const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const NewListingsPage = lazy(() => import("../pages/NewListingsPage"));
 const UsedListingsPage = lazy(() => import("../pages/UsedListingsPage"));
 const AccessDeniedPage = lazy(() => import("../pages/AccessDeniedPage"));
+const TestApiPage = lazy(() => import("../pages/TestApiPage"));
+const TestAuthPage = lazy(() => import("../pages/TestAuthPage"));
 
 // Сторінки авторизації
 const LoginPage = lazy(() => import("../pages/LoginPage"));
@@ -164,6 +166,8 @@ const AppRoutes = () => {
         <Route path="/new" element={<NewListingsPage />} />
         <Route path="/used" element={<UsedListingsPage />} />
         <Route path="/access-denied" element={<AccessDeniedPage />} />
+        <Route path="/test-api" element={<TestApiPage />} />
+        <Route path="/test-auth" element={<TestAuthPage />} />
 
         {/* Маршрути авторизації - доступні лише для неавторизованих */}
         <Route
@@ -207,7 +211,7 @@ const AppRoutes = () => {
           }
         />
         <Route
-          path="profile/listings/edit/:id"
+          path="/profile/listings/edit/:id"
           element={
             <ProtectedRoute>
               <EditListingPage />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchListingById, updateListing } from "../store/listingSlice";
@@ -10,7 +10,7 @@ import {
   fetchLocations,
 } from "../store/locationSlice";
 import { ensureFreshToken } from "../utils/tokenRefresh";
-import { countriesAPI } from "../api/apiClient";
+import { countriesAPI, listingsAPI } from "../api/apiClient";
 import MotorizedSpecFormComponent, {
   initialMotorizedSpec,
   MotorizedSpecForm as MotorizedSpecFormType,
@@ -21,13 +21,6 @@ import PriceInput from "../components/ui/PriceInput";
 import ImageUploader from "../components/ui/ImageUploader";
 import LocationSelector from "../components/ui/LocationSelector";
 import Loader from "../components/common/Loader";
-
-// Add Leaflet to the Window type for TypeScript
-declare global {
-  interface Window {
-    L: any;
-  }
-}
 
 interface FormData {
   title: string;
@@ -74,7 +67,7 @@ const EditListingPage = () => {
     (state) => state.listing
   );
   const { categories } = useAppSelector((state) => state.catalog);
-  const { regions, communities, locations } = useAppSelector(
+  const { locations } = useAppSelector(
     (state) => state.locations
   );
 
@@ -798,31 +791,52 @@ const EditListingPage = () => {
   // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("🚀 handleSubmit started");
+    console.log("📋 Current formData:", formData);
+    console.log("📍 Current coordinates:", { latitude, longitude });
+    console.log("🔧 Is motorized:", isMotorized);
+    console.log("⚙️ Motorized spec:", motorizedSpec);
 
-    if (!validateForm() || !id) return;
+    if (!validateForm() || !id) {
+      console.log("❌ Validation failed or no ID");
+      return;
+    }
 
     setIsSubmitting(true);
+    console.log("🔄 Setting isSubmitting to true");
 
     try {
       // Ensure token is fresh
+      console.log("🔑 Ensuring fresh token...");
       await ensureFreshToken();
 
       // Prepare form data for submission
       const formDataToSubmit = new FormData();
+      console.log("📦 Creating FormData for submission");
 
       // Basic information
       formDataToSubmit.append("title", formData.title);
       formDataToSubmit.append("description", formData.description);
-      formDataToSubmit.append("price", formData.price);
+  // Ensure price is a clean numeric string
+  const cleanPrice = formData.price.replace(/\s/g, "");
+  formDataToSubmit.append("price", cleanPrice);
       formDataToSubmit.append("currency", formData.currency);
       formDataToSubmit.append("categoryId", formData.categoryId);
       formDataToSubmit.append("brandId", formData.brandId);
-      formDataToSubmit.append("condition", formData.condition);
+      // Backend expects lowercase condition (e.g., "used" | "new")
+      formDataToSubmit.append(
+        "condition",
+        formData.condition.toLowerCase() as "used" | "new"
+      );
+
+      console.log("✅ Basic fields added to FormData");
 
       // Coordinates
       if (latitude !== undefined && longitude !== undefined) {
         formDataToSubmit.append("latitude", String(latitude));
         formDataToSubmit.append("longitude", String(longitude));
+        console.log("🗺️ Coordinates added:", { latitude, longitude });
       }
 
       // Location data with embedded coordinates for redundancy
@@ -837,19 +851,24 @@ const EditListingPage = () => {
         longitude,
       };
       formDataToSubmit.append("location", JSON.stringify(locationData));
+      console.log("🏠 Location data added:", locationData);
 
       // Price settings
       formDataToSubmit.append("priceType", formData.priceType);
       formDataToSubmit.append("vatIncluded", String(formData.vatIncluded));
+      console.log("💰 Price settings added");
 
       // Technical specs for motorized equipment
       if (isMotorized) {
+        console.log("🚜 Processing motorized specs...");
         const hasFilledValues = Object.values(motorizedSpec).some((value) => {
           if (value === null || value === undefined) return false;
           if (typeof value === "string" && value.trim() === "") return false;
           if (typeof value === "boolean" && value === false) return false;
           return true;
         });
+
+        console.log("📊 Has filled motorized values:", hasFilledValues);
 
         if (hasFilledValues) {
           // Clean and convert motorizedSpec
@@ -901,20 +920,26 @@ const EditListingPage = () => {
             "motorizedSpec",
             JSON.stringify(cleanMotorizedSpec)
           );
+          console.log("⚙️ Motorized spec added:", cleanMotorizedSpec);
         }
+      } else {
+        console.log("🚫 Not motorized, skipping specs");
       }
 
       // Images - handle both new files and existing URLs
-      formData.images.forEach((image) => {
+      console.log("🖼️ Processing images:", formData.images.length);
+      formData.images.forEach((image, index) => {
         if (image instanceof File) {
           formDataToSubmit.append("images", image);
+          console.log(`📁 Added new image file ${index + 1}:`, image.name);
         } else if (typeof image === "string") {
           // Existing URLs are sent separately
           formDataToSubmit.append("existingImages", image);
+          console.log(`🔗 Added existing image URL ${index + 1}:`, image);
         }
       });
 
-      console.log("Submitting form with data:", {
+      console.log("📋 Final FormData summary:", {
         title: formData.title,
         price: formData.price,
         coordinates: [latitude, longitude],
@@ -922,25 +947,36 @@ const EditListingPage = () => {
         imagesCount: formData.images.length,
       });
 
+      // Log all FormData entries
+      console.log("📦 All FormData entries:");
+      for (const [key, value] of formDataToSubmit.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+
       // Send to server
+      console.log("🌐 Sending update request to server...");
       const resultAction = await dispatch(
         updateListing({ id: parseInt(id), formData: formDataToSubmit })
       );
 
+      console.log("📥 Server response action:", resultAction);
+
       if (updateListing.fulfilled.match(resultAction)) {
+        console.log("✅ Update successful! Navigating to listing page...");
         navigate(`/listings/${id}`);
       } else {
-        console.error("Update listing failed:", resultAction.error);
+        console.error("❌ Update listing failed:", resultAction.error);
         alert(
           `Не вдалося оновити оголошення: ${resultAction.error?.message || "Перевірте правильність заповнення форми"}`
         );
       }
     } catch (error) {
-      console.error("Error updating listing:", error);
+      console.error("💥 Error updating listing:", error);
       alert(
         `Помилка при оновленні оголошення: ${error instanceof Error ? error.message : "Невідома помилка"}`
       );
     } finally {
+      console.log("🏁 Setting isSubmitting to false");
       setIsSubmitting(false);
     }
   };
@@ -955,6 +991,13 @@ const EditListingPage = () => {
         <Loader />
       ) : (
         <form onSubmit={handleSubmit}>
+          {/* Статус збереження */}
+          {isSubmitting && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+              🔄 Збереження змін... Будь ласка, зачекайте.
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Ліва колонка */}
             <div className="space-y-6">
@@ -1106,6 +1149,29 @@ const EditListingPage = () => {
             >
               Скасувати
             </button>
+            
+            {/* Кнопка простого тестування */}
+            <button
+              type="button"
+              onClick={async () => {
+                console.log("🧪 Test button clicked");
+                try {
+                  const formData = new FormData();
+                  formData.append("title", "Test Update " + new Date().toISOString());
+                  
+                  const response = await listingsAPI.update(parseInt(id!), formData);
+                  console.log("✅ Direct API test successful:", response);
+                  alert("Прямий тест API пройшов успішно!");
+                } catch (error) {
+                  console.error("❌ Direct API test failed:", error);
+                  alert("Прямий тест API провалився: " + ((error as Error)?.message || 'Unknown error'));
+                }
+              }}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+            >
+              🧪 Тест API
+            </button>
+            
             <button
               type="submit"
               disabled={isLoading || isSubmitting}

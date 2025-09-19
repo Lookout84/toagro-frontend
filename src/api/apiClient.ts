@@ -51,10 +51,17 @@ api.interceptors.response.use(
 
         try {
           const response = await authAPI.refreshToken();
-          if (response.data?.accessToken) {
-            setToken(response.data.accessToken);
+          const refreshedToken =
+            response?.data?.accessToken ||
+            response?.data?.token ||
+            response?.data?.data?.accessToken ||
+            response?.data?.data?.token;
 
-            error.config.headers.Authorization = `Bearer ${response.data.accessToken}`;
+          if (refreshedToken) {
+            setToken(refreshedToken);
+
+            if (!error.config.headers) error.config.headers = {};
+            error.config.headers.Authorization = `Bearer ${refreshedToken}`;
             return api(error.config);
           }
         } catch (refreshError) {
@@ -246,7 +253,9 @@ export const listingsAPI = {
 
   update: (id: number, formData: FormData) => {
     return api.put(`/listings/${id}`, formData, {
-      headers: {},
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
       onUploadProgress: (progressEvent) => {
         console.log(
           "Прогрес завантаження:",

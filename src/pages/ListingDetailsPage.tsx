@@ -5,6 +5,7 @@ import { fetchListingById, setSimilarListings } from "../store/listingSlice";
 import { listingsAPI, chatAPI } from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../utils/currencyFormatter";
+import { Listing } from "../store/catalogSlice";
 import {
   Share2,
   Heart,
@@ -26,14 +27,6 @@ import {
 } from "lucide-react";
 import Loader from "../components/common/Loader";
 import ListingCard from "../components/ui/ListingCard";
-
-type ListingUser = {
-  id: number;
-  name: string;
-  avatar?: string;
-  phoneNumber?: string | null;
-  email?: string | null;
-};
 
 type MotorizedSpec = {
   model?: string;
@@ -76,26 +69,27 @@ type MotorizedSpec = {
   serialNumber?: string;
 };
 
-type Listing = {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  priceType?: "NETTO" | "BRUTTO";
-  currency?: "UAH" | "USD" | "EUR";
+// Розширюємо тип Listing, щоб включити поля, які можуть бути в API
+interface ExtendedListing extends Listing {
   vatIncluded?: boolean;
-  images: string[];
-  location: any;
-  category: string;
-  categoryId: number;
-  condition?: "new" | "used";
-  brandId?: number;
   brandName?: string;
-  createdAt: string;
-  views: number;
-  user: ListingUser;
   motorizedSpec?: MotorizedSpec;
-};
+}
+
+interface LocationObject {
+  settlement?: string;
+  locationName?: string;
+  name?: string;
+  region?: {
+    name?: string;
+  } | string;
+  community?: {
+    name?: string;
+  };
+  country?: {
+    name?: string;
+  } | string;
+}
 
 const ListingDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -114,7 +108,7 @@ const ListingDetailsPage = () => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   // Функція для форматування location відповідно до CreateListingPage
-  const renderLocation = (locationObj: any) => {
+  const renderLocation = (locationObj: LocationObject | string) => {
     if (!locationObj) return "Місце не вказано";
     
     if (typeof locationObj === "string") return locationObj;
@@ -156,10 +150,18 @@ const ListingDetailsPage = () => {
   // Завантаження оголошення
   useEffect(() => {
     if (id) {
+      console.log("Fetching listing with ID:", id);
       dispatch(fetchListingById(parseInt(id)));
     }
     window.scrollTo(0, 0);
   }, [id, dispatch]);
+
+  // Додаємо useEffect для логування стану
+  useEffect(() => {
+    console.log("Current listing state:", currentListing);
+    console.log("Is loading:", isLoading);
+    console.log("Current ID:", id);
+  }, [currentListing, isLoading, id]);
 
   // Завантаження схожих оголошень
   useEffect(() => {
@@ -387,6 +389,10 @@ const ListingDetailsPage = () => {
             Оголошення могло бути видалено або ви перейшли за неправильним
             посиланням.
           </p>
+          <div className="mb-4 text-sm text-gray-500">
+            <p>ID оголошення: {id}</p>
+            <p>Статус завантаження: {isLoading ? "Завантажується..." : "Завершено"}</p>
+          </div>
           <Link
             to="/catalog"
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
@@ -491,9 +497,9 @@ const ListingDetailsPage = () => {
                    currentListing.priceType === "NETTO" ? "(без ПДВ)" : ""}
                 </span>
               )}
-              {"vatIncluded" in currentListing && (
+              {(currentListing as ExtendedListing).vatIncluded !== undefined && (
                 <span className="ml-2 text-sm font-normal text-gray-500">
-                  {(currentListing as any).vatIncluded ? "(ПДВ включено)" : "(ПДВ не включено)"}
+                  {(currentListing as ExtendedListing).vatIncluded ? "(ПДВ включено)" : "(ПДВ не включено)"}
                 </span>
               )}
             </div>
@@ -527,10 +533,10 @@ const ListingDetailsPage = () => {
                   </span>
                 </div>
               )}
-              {(currentListing as any)?.brandName && (
+              {(currentListing as ExtendedListing)?.brandName && (
                 <div className="flex items-center">
                   <span className="text-gray-600 w-20">Марка:</span>
-                  <span className="font-medium">{(currentListing as any).brandName}</span>
+                  <span className="font-medium">{(currentListing as ExtendedListing).brandName}</span>
                 </div>
               )}
             </div>
@@ -703,9 +709,9 @@ const ListingDetailsPage = () => {
           </div>
 
           {/* Технічні характеристики */}
-          {(currentListing as any).motorizedSpec && (
+          {(currentListing as ExtendedListing).motorizedSpec && (
             <div className="mt-8">
-              {renderMotorizedSpecs((currentListing as any).motorizedSpec)}
+              {renderMotorizedSpecs((currentListing as ExtendedListing).motorizedSpec!)}
             </div>
           )}
         </div>
